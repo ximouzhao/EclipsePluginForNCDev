@@ -1,4 +1,4 @@
-package plugineclipse;
+package com.yonyou.zhaoxmf.PluginEclipse;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;

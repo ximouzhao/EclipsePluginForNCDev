@@ -1,4 +1,4 @@
-package plugineclipse.actions;
+package com.yonyou.zhaoxmf.PluginEclipse.actions;
 
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
