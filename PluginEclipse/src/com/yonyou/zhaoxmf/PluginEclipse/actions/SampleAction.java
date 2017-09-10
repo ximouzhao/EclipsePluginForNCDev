@@ -6,6 +6,8 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.jface.dialogs.MessageDialog;
 
+import com.yonyou.zhaoxmf.PluginEclipse.Shell.ClearCacheDialog;
+
 /**
  * Our sample action implements workbench action delegate.
  * The action proxy will be created by the workbench and
@@ -29,10 +31,11 @@ public class SampleAction implements IWorkbenchWindowActionDelegate {
 	 * @see IWorkbenchWindowActionDelegate#run
 	 */
 	public void run(IAction action) {
-		MessageDialog.openInformation(
+		/*MessageDialog.openInformation(
 			window.getShell(),
 			"PluginEclipse",
-			"Hello, Eclipse world");
+			"Hello, Eclipse world");*/
+		ClearCacheDialog.showClearCacheShell(window.getShell());
 	}
 
 	/**
