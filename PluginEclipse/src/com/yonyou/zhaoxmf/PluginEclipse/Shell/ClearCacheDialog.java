@@ -1,14 +1,22 @@
 package com.yonyou.zhaoxmf.PluginEclipse.Shell;
 
+import java.io.File;
+
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-
-
+import org.eclipse.swt.widgets.Text;
 
 public class ClearCacheDialog extends Dialog{
 	
@@ -18,28 +26,51 @@ public class ClearCacheDialog extends Dialog{
 	}
 	public static void showClearCacheShell(Shell shell){
 		ClearCacheDialog dialog=new ClearCacheDialog(shell,SWT.SYSTEM_MODAL);
-		
 		dialog.open();
 	}
 	@Override
+	protected Point getInitialSize() {
+		return new Point(400, 300);
+	}
+	@Override
 	protected void configureShell(Shell newShell) {
-		// TODO Auto-generated method stub
+		newShell.setText("清NC缓存");
 		super.configureShell(newShell);
-		newShell.setText("清除NC缓存");
+	}
+	@Override
+	protected int getShellStyle() {
+		return super.getShellStyle()| SWT.RESIZE;
 	}
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container =(Composite)super.createDialogArea(parent);
-		final Label nameLabel = new Label(container, SWT.NONE);
-		 nameLabel.setText("名字:");
-		 final Label nameLabe2 = new Label(container, SWT.NONE);
-		 nameLabe2.setText("名字2:");
-		 final Label nameLabe3 = new Label(container, SWT.NONE);
-		 nameLabe3.setText("名字3:");
-		 final Label nameLabe4 = new Label(container, SWT.NONE);
-		 nameLabe4.setText("名字4:");
-		 final Button button =new Button(container, SWT.PUSH);
-		 button.setText("清除");
+		final GridLayout gridlayout=new GridLayout();
+		gridlayout.numColumns=2;
+		container.setLayout(gridlayout);
+		 container.setBounds(10, 10, 600, 600);
+		final Button button1 = new Button(container, SWT.CHECK);
+		final String NCCacheDir = System.getProperty("user.home")+"\\NCCACHE";
+		button1.setText(NCCacheDir);
+		button1.setSelection(true);
+		 final Button button2 =new Button(container, SWT.PUSH);
+		 button2.setText("清空");
+		 final Text text=new Text(container,SWT.BORDER|SWT.WRAP |SWT.V_SCROLL |SWT.H_SCROLL|SWT.MULTI);
+		 //text.setText(container.getLayout().toString());
+		 text.setEditable(false);
+		 text.setLayoutData(new GridData(300, 300));
+		 button2.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				File file=new File(NCCacheDir);
+				if(file.list().length==0){
+					text.setText("无NC缓存文件");
+				}else{
+					deleteDir(new File(NCCacheDir), text);
+					new File(NCCacheDir).mkdirs();
+				}
+			}
+		});
+		
 		return container;
 	}
 	@Override
@@ -48,6 +79,23 @@ public class ClearCacheDialog extends Dialog{
 		/*return super.createButton(parent, id, label, defaultButton);*/
 		return null;
 	}
-	
+	private static boolean deleteDir(File dir,Text text) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            //递归删除目录中的子目录下
+            for (int i=0; i<children.length; i++) {
+            	File currDir=new File(dir, children[i]);
+                boolean success = deleteDir(new File(dir, children[i]),text);
+                if (!success) {
+                	text.setText("删除失败："+currDir.toString());
+                    return false;
+                }else{
+                	text.setText("删除成功："+currDir.toString());
+                }
+            }
+        }
+        // 目录此时为空，可以删除
+        return dir.delete();
+    }
 
 }
