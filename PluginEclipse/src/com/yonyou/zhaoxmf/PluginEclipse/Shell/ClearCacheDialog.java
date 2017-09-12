@@ -48,16 +48,16 @@ public class ClearCacheDialog extends Dialog{
 		gridlayout.numColumns=2;
 		container.setLayout(gridlayout);
 		 container.setBounds(10, 10, 600, 600);
-		final Button button1 = new Button(container, SWT.CHECK);
+		final Label label = new Label(container,SWT.PUSH);
 		final String NCCacheDir = System.getProperty("user.home")+"\\NCCACHE";
-		button1.setText(NCCacheDir);
-		button1.setSelection(true);
+		label.setText(NCCacheDir);
 		 final Button button2 =new Button(container, SWT.PUSH);
 		 button2.setText("清空");
+		 label.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,false,1,1));
 		 final Text text=new Text(container,SWT.BORDER|SWT.WRAP |SWT.V_SCROLL |SWT.H_SCROLL|SWT.MULTI);
 		 //text.setText(container.getLayout().toString());
 		 text.setEditable(false);
-		 text.setLayoutData(new GridData(300, 300));
+		 text.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true,2,1));
 		 button2.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -65,8 +65,11 @@ public class ClearCacheDialog extends Dialog{
 				if(file.list().length==0){
 					text.setText("无NC缓存文件");
 				}else{
-					deleteDir(new File(NCCacheDir), text);
-					new File(NCCacheDir).mkdirs();
+					boolean issucceed=deleteDir(new File(NCCacheDir), text);
+					if(issucceed){
+						new File(NCCacheDir).mkdirs();
+						text.setText("已成功清除缓存");
+					}
 				}
 			}
 		});
