@@ -16,12 +16,12 @@ import com.yonyou.zhaoxmf.PluginEclipse.Shell.ClearCacheDialog;
  * delegated to it.
  * @see IWorkbenchWindowActionDelegate
  */
-public class SampleAction implements IWorkbenchWindowActionDelegate {
+public class ClearNCCacheAction implements IWorkbenchWindowActionDelegate {
 	private IWorkbenchWindow window;
 	/**
 	 * The constructor.
 	 */
-	public SampleAction() {
+	public ClearNCCacheAction() {
 	}
 
 	/**

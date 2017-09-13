@@ -5,24 +5,34 @@
    <extension
          point="org.eclipse.ui.actionSets">
       <actionSet
-            label="Sample Action Set"
+            label="NC工具"
             visible="true"
             id="PluginEclipse.actionSet">
          <menu
-               label="Sample &amp;Menu"
+               label="NC工具"
                id="sampleMenu">
             <separator
                   name="sampleGroup">
             </separator>
          </menu>
+         
          <action
-               label="&amp;Sample Action"
+               label="导入补丁"
                icon="icons/sample.gif"
-               class="com.yonyou.zhaoxmf.PluginEclipse.actions.SampleAction"
-               tooltip="Hello, Eclipse world"
+               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ImportPatchAction"
+               tooltip="导入补丁"
                menubarPath="sampleMenu/sampleGroup"
                toolbarPath="sampleGroup"
-               id="plugineclipse.actions.SampleAction">
+               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ImportPatchAction">
+         </action>
+         <action
+               label="清NC缓存"
+               icon="icons/sample.gif"
+               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ClearNCCacheAction"
+               tooltip="清NC缓存"
+               menubarPath="sampleMenu/sampleGroup"
+               toolbarPath="sampleGroup"
+               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ClearNCCacheAction">
          </action>
       </actionSet>
    </extension>
