@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Test
+Bundle-SymbolicName: test; singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: test.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jdt.annotation;bundle-version="1.0.1",
+ org.eclipse.jdt;bundle-version="3.8.1",
+ org.eclipse.jdt.annotation.source;bundle-version="1.0.1",
+ org.eclipse.jdt.apt.core;bundle-version="3.3.500",
+ org.eclipse.jdt.apt.core.source;bundle-version="3.3.500",
+ org.eclipse.jdt.apt.pluggable.core;bundle-version="1.0.400",
+ org.eclipse.jdt.apt.pluggable.core.source;bundle-version="1.0.400"
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: org.eclipse.jdt.internal.ui.wizards.buildpaths,
+ org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage
