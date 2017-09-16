@@ -77,6 +77,7 @@ public class ImportPatchWizard extends Wizard {
 		IWorkspaceRunnable op = new IWorkspaceRunnable() {
 			public void run(IProgressMonitor monitor) throws CoreException,
 					OperationCanceledException {
+				//◊Ó÷’÷¥––ÃÂ
 				finishPage(monitor);
 			}
 		};
