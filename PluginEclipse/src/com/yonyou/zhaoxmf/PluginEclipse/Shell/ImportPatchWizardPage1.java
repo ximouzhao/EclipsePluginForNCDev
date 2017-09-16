@@ -1,8 +1,12 @@
 package com.yonyou.zhaoxmf.PluginEclipse.Shell;
 
+import org.eclipse.core.internal.resources.Project;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
@@ -23,6 +27,13 @@ public class ImportPatchWizardPage1 extends WizardPage {
 	
 	private CheckboxTableViewer projectNames;
 	private Object[] selection;
+	public Object[] getSelection() {
+		return selection;
+	}
+	public IJavaProject getJavaProject(){
+		if(selection.length==0)return null;
+		return JavaCore.create((Project)selection[0]);
+	}
 	public ImportPatchWizardPage1() {
 		super("选择NC项目");
 		setTitle("选择NC项目");
@@ -51,6 +62,19 @@ public class ImportPatchWizardPage1 extends WizardPage {
 	                if (!project.isAccessible()) {
 	                    return false;
 	                }
+	                try {
+						if (!project.hasNature(JavaCore.NATURE_ID)) {
+							/*fCurrJProject= JavaCore.create(project);
+							fEntries= fCurrJProject.getRawClasspath();
+							fOutputLocation= fCurrJProject.getOutputLocation();
+							fProjectStatus.setOK();*/
+							return false;
+						}
+					} catch (CoreException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
 	                projectHolder[0] = project;
 	                return BuildUtilities.isEnabled(projectHolder, IncrementalProjectBuilder.CLEAN_BUILD);
 	            }
