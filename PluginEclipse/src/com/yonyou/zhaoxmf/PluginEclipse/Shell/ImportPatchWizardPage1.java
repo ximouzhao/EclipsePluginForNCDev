@@ -15,7 +15,9 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.internal.ide.actions.BuildUtilities;
 import org.eclipse.ui.internal.ide.dialogs.ResourceComparator;
@@ -44,8 +46,11 @@ public class ImportPatchWizardPage1 extends WizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		createProjectSelectionTable(parent);
-		setControl(parent);
+		 Composite container = new Composite(parent, SWT.PUSH);
+		 final GridLayout gridLayout=new GridLayout();
+	     container.setLayout(gridLayout);
+		createProjectSelectionTable(container);
+		setControl(container);
 	}
 	private void createProjectSelectionTable(Composite radioGroup) {
 	        projectNames = CheckboxTableViewer.newCheckList(radioGroup, SWT.BORDER);
