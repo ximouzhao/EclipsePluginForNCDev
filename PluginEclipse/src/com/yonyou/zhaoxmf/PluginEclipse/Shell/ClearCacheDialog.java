@@ -25,6 +25,7 @@ public class ClearCacheDialog extends Dialog{
 	static String failMessage="";
 	Text text=null;
 	String NCCacheDir="";
+
 	protected ClearCacheDialog(Shell parentShell,int style) {
 		super(parentShell);
 		//setShellStyle(style);

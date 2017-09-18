@@ -170,15 +170,25 @@ public class ImportPatchWizard extends Wizard {
 		try {
 
 			String path=page2.getfilePath();
-			
 			createSourceFolder(monitor,client_str);
 			createSourceFolder(monitor,public_str);
 			createSourceFolder(monitor,private_str);
 			//"\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
-			String []fileData={path};
-			copyFile(new SubProgressMonitor(monitor, 2),fileData,client_str);
-			copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
-			copyFile(new SubProgressMonitor(monitor, 2),fileData,private_str);
+			File file=new File(path+"\\classes");
+			if(file.exists()&&file.list().length!=0){
+				String []fileData={path+"\\classes"};
+				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
+			}
+			 file=new File(path+"\\client\\classes");
+			if(file.exists()&&file.list().length!=0){
+				String []fileData={path+"\\client\\classeses"};
+				copyFile(new SubProgressMonitor(monitor, 2),fileData,client_str);
+			}
+			 file=new File(path+"\\META-INF\\classes");
+			if(file.exists()&&file.list().length!=0){
+				String []fileData={path+"\\META-INF\\classes"};
+				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
+			}
 		/*} catch (JavaModelException e) {
 			e.printStackTrace();
 			return false;*/

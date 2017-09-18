@@ -135,11 +135,20 @@ public class ImportPatchWizardPage2 extends WizardPage {
 			tipText.setText("空文件夹");
 		}else if(Arrays.asList(file.list()).contains("modules")){
 			tipText.setText("检测到此路径为nchome根路径,请选择对应的模块");
-		}else if(Arrays.asList(file.list()).contains("client")||Arrays.asList(file.list()).contains("lib")||Arrays.asList(file.list()).contains("META-INF")){
+		}else if(isModulesOrPatchPath(path)){
 			tipText.setText("路径正确");
 		}else {
 			tipText.setText("该文件夹不是合法的模块路径");
 		}
+	}
+	public static boolean isModulesOrPatchPath(String path){
+		File file=new File(path+"\\classes");
+		if(file.exists())return true;
+		file=new File(path+"\\client\\classes");
+		if(file.exists())return true;
+		file=new File(path+"\\META-INF\\classes");
+		if(file.exists())return true;
+		return false;
 	}
 	@Override
 	public IWizardPage getNextPage() {
