@@ -18,11 +18,11 @@
          <action
                label="登录PL/SQL"
                icon="icons/sample.gif"
-               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQL"
+               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQLAction"
                tooltip="登录PL/SQL"
                menubarPath="sampleMenu/sampleGroup"
                toolbarPath="sampleGroup"
-               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQL">
+               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQLAction">
          </action>
          <action
                label="导入补丁"
