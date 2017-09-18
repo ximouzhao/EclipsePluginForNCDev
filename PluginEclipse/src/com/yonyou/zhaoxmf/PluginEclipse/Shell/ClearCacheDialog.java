@@ -91,7 +91,10 @@ public class ClearCacheDialog extends Dialog{
 
 		File file=new File(NCCacheDir);
 		failMessage="";
-		if(file.list().length==0){
+		if(file.list()==null){
+			text.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
+			text.setText("NCCache目录不存在");
+		}else if(file.list().length==0){
 			text.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY));
 			text.setText("无NC缓存文件");
 		}else{
