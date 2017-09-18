@@ -176,17 +176,17 @@ public class ImportPatchWizard extends Wizard {
 			//"\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
 			File file=new File(path+"\\classes");
 			if(file.exists()&&file.list().length!=0){
-				String []fileData={path+"\\classes"};
+				String []fileData=convertAllChildDir(file);
 				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
 			}
 			 file=new File(path+"\\client\\classes");
 			if(file.exists()&&file.list().length!=0){
-				String []fileData={path+"\\client\\classeses"};
+				String []fileData=convertAllChildDir(file);
 				copyFile(new SubProgressMonitor(monitor, 2),fileData,client_str);
 			}
 			 file=new File(path+"\\META-INF\\classes");
 			if(file.exists()&&file.list().length!=0){
-				String []fileData={path+"\\META-INF\\classes"};
+				String []fileData=convertAllChildDir(file);
 				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
 			}
 		/*} catch (JavaModelException e) {
@@ -199,6 +199,13 @@ public class ImportPatchWizard extends Wizard {
 			monitor.done();
 		}
 		return true;
+	}
+	private String [] convertAllChildDir(File file){
+		ArrayList<String> dirList=new ArrayList<String>();
+		for(String s:file.list()){
+			dirList.add(file.getAbsolutePath()+File.separator+s);
+		}
+		return dirList.toArray(new String[]{});		
 	}
 	private void copyFile(IProgressMonitor monitor,String []fileData,String sourcePath){
 		fCurrJProject=page1.getJavaProject();
