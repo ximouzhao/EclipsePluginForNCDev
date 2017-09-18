@@ -1,12 +1,24 @@
 package com.yonyou.zhaoxmf.PluginEclipse.actions;
 
+import java.io.File;
 import java.io.IOException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.jdt.core.dom.ThrowStatement;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.PreferenceStore;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+import org.eclipse.ui.preferences.ScopedPreferenceStore;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 
@@ -16,9 +28,28 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 	@Override
 	public void run(IAction action) {
 		try {
-			Runtime.getRuntime().exec("\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid=WLX_SHYS_201797/1@20.10.129.63:1521/orcl");
-		} catch (IOException e) {
-			MessageDialog.openError(window.getShell(), "ERROR", e.getStackTrace().toString());
+			IPreferenceStore preferenceStore = new ScopedPreferenceStore(new InstanceScope(),"nc.uap.studio.common");
+			String homePath=preferenceStore.getString("FIELD_NC_HOME");
+			File file=new File(homePath+"\\ierp\\bin\\prop.xml");
+			if(!file.canRead()){
+				throw new Exception("无法读取NCHomeProp.xml文件,请检查NChome路径设置是否正确");
+			}
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(); 
+			DocumentBuilder builder = factory.newDocumentBuilder(); 
+			Document doc = builder.parse(file); 
+			NodeList nList=doc.getElementsByTagName("dataSource"); 
+			if(nList.getLength()>0){
+				Element node = (Element)nList.item(0);
+				String databaseUrl=node.getElementsByTagName("databaseUrl").item(0).getFirstChild().getNodeValue();
+				String user=node.getElementsByTagName("user").item(0).getFirstChild().getNodeValue();
+				String password=node.getElementsByTagName("password").item(0).getFirstChild().getNodeValue();
+				String cmd="\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
+				Runtime.getRuntime().exec(cmd);
+			}else{
+				throw new Exception("读取数据源出错");
+			}
+		} catch (Exception e) {
+			MessageDialog.openError(window.getShell(), "ERROR",e.getMessage());
 			e.printStackTrace();
 		}
 	}
