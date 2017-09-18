@@ -15,7 +15,15 @@
                   name="sampleGroup">
             </separator>
          </menu>
-         
+         <action
+               label="登录PL/SQL"
+               icon="icons/sample.gif"
+               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQL"
+               tooltip="登录PL/SQL"
+               menubarPath="sampleMenu/sampleGroup"
+               toolbarPath="sampleGroup"
+               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQL">
+         </action>
          <action
                label="导入补丁"
                icon="icons/sample.gif"
