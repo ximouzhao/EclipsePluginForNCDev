@@ -1,5 +1,6 @@
 package com.yonyou.zhaoxmf.PluginEclipse.Shell;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -167,10 +168,14 @@ public class ImportPatchWizard extends Wizard {
 
 	private boolean finishPage(IProgressMonitor monitor) {
 		try {
+
+			String path=page2.getfilePath();
+			
 			createSourceFolder(monitor,client_str);
 			createSourceFolder(monitor,public_str);
 			createSourceFolder(monitor,private_str);
-			String []fileData={"D:\\eclipseplugin\\刷新数据消失635\\replacement\\modules\\tbb\\META-INF\\classes\\nc"};
+			//"\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
+			String []fileData={path};
 			copyFile(new SubProgressMonitor(monitor, 2),fileData,client_str);
 			copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
 			copyFile(new SubProgressMonitor(monitor, 2),fileData,private_str);
