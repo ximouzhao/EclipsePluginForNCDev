@@ -17,7 +17,7 @@
          </menu>
          <action
                label="登录PL/SQL"
-               icon="icons/sample.gif"
+               icon="icons/toPlsql_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQLAction"
                tooltip="登录PL/SQL"
                menubarPath="sampleMenu/sampleGroup"
@@ -26,7 +26,7 @@
          </action>
          <action
                label="导入补丁"
-               icon="icons/sample.gif"
+               icon="icons/importpatch_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ImportPatchAction"
                tooltip="导入补丁"
                menubarPath="sampleMenu/sampleGroup"
@@ -35,7 +35,7 @@
          </action>
          <action
                label="清NC缓存"
-               icon="icons/sample.gif"
+               icon="icons/cleancache_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ClearNCCacheAction"
                tooltip="清NC缓存"
                menubarPath="sampleMenu/sampleGroup"
@@ -43,6 +43,20 @@
                id="com.yonyou.zhaoxmf.PluginEclipse.actions.ClearNCCacheAction">
          </action>
       </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetPLSqlLocationPage"
+            id="com.yonyou.zhaoxmf.PluginEclipse.preferences.SamplePreferencePage"
+            name="PL/SQL安装路径">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="com.yonyou.zhaoxmf.PluginEclipse.preferences.PreferenceInitializer">
+      </initializer>
    </extension>
 
 </plugin>

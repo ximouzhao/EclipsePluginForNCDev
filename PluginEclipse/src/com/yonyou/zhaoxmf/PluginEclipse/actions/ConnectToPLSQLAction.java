@@ -21,6 +21,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.yonyou.zhaoxmf.PluginEclipse.Activator;
+import com.yonyou.zhaoxmf.PluginEclipse.preferences.PreferenceConstants;
+
 import sysmanager.sm.util.Encode;
 
 
@@ -48,7 +51,10 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 				String user=node.getElementsByTagName("user").item(0).getFirstChild().getNodeValue();
 				String password=node.getElementsByTagName("password").item(0).getFirstChild().getNodeValue();
 				password=encode.decode(password);
-				String cmd="\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
+				String plsqlPath=Activator.getDefault().getPreferenceStore().getString(PreferenceConstants.P_PATH);
+				if(plsqlPath==null||!plsqlPath.contains(".exe")||!new File(plsqlPath).exists()||!new File(plsqlPath).isFile()){throw new Exception("PL/sql路径设置错误,请在首选项中重新设置");}
+				//String cmd="\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
+				String cmd="\""+plsqlPath+"\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
 				Runtime.getRuntime().exec(cmd);
 			}else{
 				throw new Exception("读取数据源出错");
