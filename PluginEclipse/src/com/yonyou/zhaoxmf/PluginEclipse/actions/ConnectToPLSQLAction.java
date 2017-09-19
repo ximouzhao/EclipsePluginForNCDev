@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.dom.ThrowStatement;
 import org.eclipse.jface.action.IAction;
@@ -20,7 +21,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
+import sysmanager.sm.util.Encode;
+
 
 public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 
@@ -28,6 +30,8 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 	@Override
 	public void run(IAction action) {
 		try {
+			Encode encode = new Encode();
+			
 			IPreferenceStore preferenceStore = new ScopedPreferenceStore(new InstanceScope(),"nc.uap.studio.common");
 			String homePath=preferenceStore.getString("FIELD_NC_HOME");
 			File file=new File(homePath+"\\ierp\\bin\\prop.xml");
@@ -43,6 +47,7 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 				String databaseUrl=node.getElementsByTagName("databaseUrl").item(0).getFirstChild().getNodeValue();
 				String user=node.getElementsByTagName("user").item(0).getFirstChild().getNodeValue();
 				String password=node.getElementsByTagName("password").item(0).getFirstChild().getNodeValue();
+				password=encode.decode(password);
 				String cmd="\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
 				Runtime.getRuntime().exec(cmd);
 			}else{
