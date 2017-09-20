@@ -6,6 +6,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.jface.dialogs.MessageDialog;
 
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 import com.yonyou.zhaoxmf.PluginEclipse.Shell.ClearCacheDialog;
 
 /**
@@ -35,7 +36,12 @@ public class ClearNCCacheAction implements IWorkbenchWindowActionDelegate {
 			window.getShell(),
 			"PluginEclipse",
 			"Hello, Eclipse world");*/
-		ClearCacheDialog.showClearCacheShell(window.getShell());
+		try {
+			ClearCacheDialog.showClearCacheShell(window.getShell());
+		} catch (Exception e) {
+			MessageDialog.openInformation(window.getShell(), "´íÎó", e.getMessage());
+			e.printStackTrace();
+		}
 	}
 
 	/**

@@ -14,7 +14,7 @@ public class ImportPatchAction implements IWorkbenchWindowActionDelegate {
 	@Override
 	public void run(IAction action) {
 		// TODO Auto-generated method stub
-		ImportPatchWizard wizard=new ImportPatchWizard();
+		ImportPatchWizard wizard=new ImportPatchWizard(window);
 		WizardDialog dialog=new WizardDialog(window.getShell(), wizard);
 		dialog.open();
 	}

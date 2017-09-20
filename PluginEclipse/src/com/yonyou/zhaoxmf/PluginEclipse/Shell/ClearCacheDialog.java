@@ -23,11 +23,13 @@ import org.eclipse.swt.widgets.Text;
 
 public class ClearCacheDialog extends Dialog{
 	static String failMessage="";
+	Shell shell;
 	Text text=null;
 	String NCCacheDir="";
 
 	protected ClearCacheDialog(Shell parentShell,int style) {
 		super(parentShell);
+		shell=parentShell;
 		//setShellStyle(style);
 	}
 	public static void showClearCacheShell(Shell shell){
@@ -72,8 +74,9 @@ public class ClearCacheDialog extends Dialog{
 				try {
 					//Runtime.getRuntime().exec("explorer "+NCCacheDir);
 					java.awt.Desktop.getDesktop().open(new File(NCCacheDir));
-				} catch (IOException e1) {
+				} catch (Exception e1) {
 					e1.printStackTrace();
+					MessageDialog.openInformation(shell, "´íÎó", e1.getMessage());
 				}
 				super.widgetSelected(e);
 			}

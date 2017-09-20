@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.JProgressBar;
+
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.internal.resources.Folder;
@@ -56,6 +58,7 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.IOverwriteQuery;
 import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
@@ -66,15 +69,16 @@ import org.eclipse.ui.wizards.datatransfer.FileStoreStructureProvider;
 import org.eclipse.ui.wizards.datatransfer.ImportOperation;
 
 public class ImportPatchWizard extends Wizard {
-	
+	IWorkbenchWindow window;
 	public static final String public_str="public";
 	public static final String private_str="private";
 	public static final String client_str="client";
 
 	
-	public ImportPatchWizard() {
+	public ImportPatchWizard(IWorkbenchWindow window) {
 		super();
 		setNeedsProgressMonitor(true);
+		this.window=window;
 	}
 	
 	ImportPatchWizardPage1 page1;
@@ -106,7 +110,18 @@ public class ImportPatchWizard extends Wizard {
 			public void run(IProgressMonitor monitor) throws CoreException,
 					OperationCanceledException {
 				//最终执行体
-				finishPage(monitor);
+				try {
+					//ResourcesPlugin.getWorkspace().isAutoBuilding();
+					for(IJavaProject project:page1.getJavaProject()){
+						finishPage(project,monitor);
+					}
+				} catch (InterruptedException e) {
+					MessageDialog.openInformation(getShell(), "错误", e.getStackTrace().toString());
+					e.printStackTrace();
+				}finally{
+					monitor.done();
+				}
+				
 			}
 		};
 		try {
@@ -166,38 +181,28 @@ public class ImportPatchWizard extends Wizard {
 		return ResourcesPlugin.getWorkspace().getRoot(); // look all by default
 	}
 
-	private boolean finishPage(IProgressMonitor monitor) {
-		try {
+	private boolean finishPage(IJavaProject project,IProgressMonitor monitor) throws OperationCanceledException, CoreException, InterruptedException {
 
 			String path=page2.getfilePath();
-			createSourceFolder(monitor,client_str);
-			createSourceFolder(monitor,public_str);
-			createSourceFolder(monitor,private_str);
+			createSourceFolder(project,monitor,client_str);
+			createSourceFolder(project,monitor,public_str);
+			createSourceFolder(project,monitor,private_str);
 			//"\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
 			File file=new File(path+"\\classes");
 			if(file.exists()&&file.list().length!=0){
 				String []fileData=convertAllChildDir(file);
-				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
+				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,public_str);
 			}
 			 file=new File(path+"\\client\\classes");
 			if(file.exists()&&file.list().length!=0){
 				String []fileData=convertAllChildDir(file);
-				copyFile(new SubProgressMonitor(monitor, 2),fileData,client_str);
+				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,client_str);
 			}
 			 file=new File(path+"\\META-INF\\classes");
 			if(file.exists()&&file.list().length!=0){
 				String []fileData=convertAllChildDir(file);
-				copyFile(new SubProgressMonitor(monitor, 2),fileData,public_str);
+				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,public_str);
 			}
-		/*} catch (JavaModelException e) {
-			e.printStackTrace();
-			return false;*/
-		}catch(Exception e){
-			e.printStackTrace();
-			return false;
-		} finally {
-			monitor.done();
-		}
 		return true;
 	}
 	private String [] convertAllChildDir(File file){
@@ -207,8 +212,8 @@ public class ImportPatchWizard extends Wizard {
 		}
 		return dirList.toArray(new String[]{});		
 	}
-	private void copyFile(IProgressMonitor monitor,String []fileData,String sourcePath){
-		fCurrJProject=page1.getJavaProject();
+	private void copyFile(IJavaProject project,IProgressMonitor monitor,String []fileData,String sourcePath){
+		fCurrJProject=project;
 		IPath path= fCurrJProject.getPath().append(new Path(sourcePath));
 		fWorkspaceRoot=ResourcesPlugin.getWorkspace().getRoot();
 		IResource res= fWorkspaceRoot.findMember(path);
@@ -417,8 +422,8 @@ public class ImportPatchWizard extends Wizard {
 	protected String getProblemsMessage() {
 		return IDEWorkbenchMessages.CopyFilesAndFoldersOperation_problemMessage;
 	}
-	private void createPackage(IProgressMonitor monitor) throws JavaModelException{
-		fCurrJProject=page1.getJavaProject();
+	private void createPackage(IJavaProject project,IProgressMonitor monitor) throws JavaModelException{
+		fCurrJProject=project;
 		IPath path= fCurrJProject.getPath().append(new Path("src/public"));
 		fWorkspaceRoot=ResourcesPlugin.getWorkspace().getRoot();
 		IResource res= fWorkspaceRoot.findMember(path);
@@ -432,7 +437,7 @@ public class ImportPatchWizard extends Wizard {
 		}
 		
 	}
-	private boolean createSourceFolder(IProgressMonitor monitor,String str) throws OperationCanceledException, CoreException, InterruptedException{
+	private boolean createSourceFolder(IJavaProject project,IProgressMonitor monitor,String str) throws OperationCanceledException, CoreException, InterruptedException{
 		if (monitor == null) {
 			monitor= new NullProgressMonitor();
 		}
@@ -440,7 +445,7 @@ public class ImportPatchWizard extends Wizard {
 		fProjectStatus = new StatusInfo();
 		fRootStatus=new StatusInfo();
 		fWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-		fCurrJProject = page1.getJavaProject();
+		fCurrJProject = project;
 		fEntries = fCurrJProject.getRawClasspath();
 		fOutputLocation = fCurrJProject.getOutputLocation();
 		IPath projPath = fCurrJProject.getProject().getFullPath();
@@ -653,7 +658,7 @@ public class ImportPatchWizard extends Wizard {
 
 	@Override
 	public void addPages() {
-		page1 = new ImportPatchWizardPage1();
+		page1 = new ImportPatchWizardPage1(window);
 		page2 = new ImportPatchWizardPage2();
 		page3 = new ImportPatchWizardPage3();
 		addPage(page1);
