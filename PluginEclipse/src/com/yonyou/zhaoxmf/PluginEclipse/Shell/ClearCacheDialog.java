@@ -1,16 +1,18 @@
 package com.yonyou.zhaoxmf.PluginEclipse.Shell;
 
 import java.io.File;
-import java.io.IOException;
+import java.net.URL;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -20,6 +22,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+
+import com.yonyou.zhaoxmf.PluginEclipse.Activator;
+
 
 public class ClearCacheDialog extends Dialog{
 	static String failMessage="";
@@ -33,6 +38,7 @@ public class ClearCacheDialog extends Dialog{
 		//setShellStyle(style);
 	}
 	public static void showClearCacheShell(Shell shell){
+		//File directory = new File("");//设定为当前文件夹 
 		ClearCacheDialog dialog=new ClearCacheDialog(shell,SWT.SYSTEM_MODAL);
 		dialog.open();
 	}
@@ -42,8 +48,11 @@ public class ClearCacheDialog extends Dialog{
 	}
 	@Override
 	protected void configureShell(Shell newShell) {
-		newShell.setText("清NC缓存");
 		super.configureShell(newShell);
+		newShell.setText("清NC缓存");
+		URL imageURL = Platform.getBundle(Activator.PLUGIN_ID).getEntry("icons/cleancache_small.png"); 
+		Image image = ImageDescriptor.createFromURL(imageURL).createImage();
+		newShell.setImage(image);
 	}
 	@Override
 	protected int getShellStyle() {

@@ -3,6 +3,7 @@ package com.yonyou.zhaoxmf.PluginEclipse.Shell;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
@@ -43,9 +45,13 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.DeleteResourceElementsOperation;
+import org.eclipse.jdt.internal.corext.refactoring.reorg.JavaDeleteProcessor;
 import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.ui.actions.WorkbenchRunnableAdapter;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
+import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
+import org.eclipse.jdt.internal.ui.refactoring.reorg.DeleteUserInterfaceManager;
 import org.eclipse.jdt.internal.ui.util.CoreUtility;
 import org.eclipse.jdt.internal.ui.viewsupport.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
@@ -55,9 +61,14 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.ltk.core.refactoring.participants.DeleteRefactoring;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.IOverwriteQuery;
@@ -68,22 +79,34 @@ import org.eclipse.ui.internal.ide.dialogs.IDEResourceInfoUtils;
 import org.eclipse.ui.wizards.datatransfer.FileStoreStructureProvider;
 import org.eclipse.ui.wizards.datatransfer.ImportOperation;
 
+import com.yonyou.zhaoxmf.PluginEclipse.Activator;
+
 public class ImportPatchWizard extends Wizard {
 	IWorkbenchWindow window;
-	public static final String public_str="public";
-	public static final String private_str="private";
-	public static final String client_str="client";
+	ISelection selection;
+	public ISelection getSelection() {
+		return selection;
+	}
 
-	
+	public void setSelection(ISelection selection) {
+		this.selection = selection;
+	}
+
+	public static final String PUBLIC_STR = "public";
+	public static final String PRIVATE_STR = "private";
+	public static final String CLIENT_STR = "client";
+
+	public static final String CREATE_SOURCE_FOLDER_STR = "正在创建source folder：";
+	public static final String COPY_JAVA_FILE_STR = "正在复制java文件到：";
+
 	public ImportPatchWizard(IWorkbenchWindow window) {
 		super();
 		setNeedsProgressMonitor(true);
-		this.window=window;
+		this.window = window;
 	}
-	
+
 	ImportPatchWizardPage1 page1;
 	ImportPatchWizardPage2 page2;
-	ImportPatchWizardPage3 page3;
 	private IJavaProject fCurrJProject;
 	private IClasspathEntry[] fEntries;
 	private IPath fOutputLocation;
@@ -106,25 +129,39 @@ public class ImportPatchWizard extends Wizard {
 	}
 
 	private boolean doFinish() {
-		IWorkspaceRunnable op = new IWorkspaceRunnable() {
-			public void run(IProgressMonitor monitor) throws CoreException,
-					OperationCanceledException {
-				//最终执行体
-				try {
-					//ResourcesPlugin.getWorkspace().isAutoBuilding();
-					for(IJavaProject project:page1.getJavaProject()){
-						finishPage(project,monitor);
-					}
-				} catch (InterruptedException e) {
-					MessageDialog.openInformation(getShell(), "错误", e.getStackTrace().toString());
-					e.printStackTrace();
-				}finally{
-					monitor.done();
-				}
-				
-			}
-		};
+
 		try {
+			final ArrayList<IJavaProject> list = page1.getJavaProject();
+			String filePath = page2.getfilePath();
+			if (list == null || list.size() == 0 || filePath == null
+					|| filePath.equals("")) {
+				throw new Exception("请选择项目并设置导入的路径");
+			};
+			IWorkspaceRunnable op = new IWorkspaceRunnable() {
+				public void run(IProgressMonitor monitor) throws CoreException {
+					// 最终执行体
+					try {
+						// ResourcesPlugin.getWorkspace().isAutoBuilding();
+
+						monitor.beginTask("正在导入",list.size());
+						for (IJavaProject project : page1.getJavaProject()) {
+							monitor.subTask("导入项目"
+									+ project.getProject().getName());
+							try {
+								finishPage(project, new SubProgressMonitor(monitor,	1));
+							} catch (OperationCanceledException e) {
+								e.printStackTrace();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							monitor.worked(1);
+						}
+					} finally {
+						monitor.done();
+					}
+
+				}
+			};
 			ISchedulingRule rule = null;
 			Job job = Job.getJobManager().currentJob();
 			if (job != null)
@@ -135,14 +172,14 @@ public class ImportPatchWizard extends Wizard {
 			else
 				runnable = new WorkbenchRunnableAdapter(op, getSchedulingRule());
 			getContainer().run(canRunForked(), true, runnable);
-		} catch (InvocationTargetException e) {
-			// handleFinishException(getShell(), e);
-			return false;
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
+			e.printStackTrace();
+			MessageDialog.openInformation(getShell(), "错误", e.getMessage());
 			return false;
 		}
 		return true;
 	}
+
 	private IFileStore[] buildFileStores(final String[] fileNames) {
 		IFileStore[] stores = new IFileStore[fileNames.length];
 		for (int i = 0; i < fileNames.length; i++) {
@@ -155,24 +192,25 @@ public class ImportPatchWizard extends Wizard {
 		}
 		return stores;
 	}
+
 	private void reportFileInfoNotFound(final String fileName) {
 
 		getShell().getDisplay().syncExec(new Runnable() {
 			public void run() {
-				ErrorDialog
-						.openError(
-								getShell(),
-								getProblemsTitle(),
-								NLS
-										.bind(
-												IDEWorkbenchMessages.CopyFilesAndFoldersOperation_infoNotFound,
-												fileName), null);
+				ErrorDialog.openError(
+						getShell(),
+						getProblemsTitle(),
+						NLS.bind(
+								IDEWorkbenchMessages.CopyFilesAndFoldersOperation_infoNotFound,
+								fileName), null);
 			}
 		});
 	}
+
 	protected String getProblemsTitle() {
 		return IDEWorkbenchMessages.CopyFilesAndFoldersOperation_copyFailedTitle;
 	}
+
 	protected boolean canRunForked() {
 		return true;
 	}
@@ -181,44 +219,79 @@ public class ImportPatchWizard extends Wizard {
 		return ResourcesPlugin.getWorkspace().getRoot(); // look all by default
 	}
 
-	private boolean finishPage(IJavaProject project,IProgressMonitor monitor) throws OperationCanceledException, CoreException, InterruptedException {
-
-			String path=page2.getfilePath();
-			createSourceFolder(project,monitor,client_str);
-			createSourceFolder(project,monitor,public_str);
-			createSourceFolder(project,monitor,private_str);
-			//"\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
-			File file=new File(path+"\\classes");
-			if(file.exists()&&file.list().length!=0){
-				String []fileData=convertAllChildDir(file);
-				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,public_str);
-			}
-			 file=new File(path+"\\client\\classes");
-			if(file.exists()&&file.list().length!=0){
-				String []fileData=convertAllChildDir(file);
-				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,client_str);
-			}
-			 file=new File(path+"\\META-INF\\classes");
-			if(file.exists()&&file.list().length!=0){
-				String []fileData=convertAllChildDir(file);
-				copyFile(project,new SubProgressMonitor(monitor, 2),fileData,public_str);
-			}
+	private boolean finishPage(IJavaProject project, IProgressMonitor monitor)
+			throws OperationCanceledException, CoreException,
+			InterruptedException {
+		//createPackage(project,monitor);
+		if(page1.getButtonSelection()){
+			final IPath path1 = project.getPath().append("public/");
+			//project.findElement(path1);
+			IPackageFragmentRoot ifr=project.findPackageFragmentRoot(path1);
+			if(ifr!=null)ifr.delete(IResource.KEEP_HISTORY, IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH, monitor);
+		}
+	
+		monitor.beginTask("", 60);
+		String path = page2.getfilePath();
+		monitor.subTask(CREATE_SOURCE_FOLDER_STR + CLIENT_STR);
+		 createSourceFolder(project,monitor,CLIENT_STR);
+		//Thread.sleep(5000);
+		monitor.worked(10);
+		monitor.subTask(CREATE_SOURCE_FOLDER_STR + PUBLIC_STR);
+		 createSourceFolder(project,monitor,PUBLIC_STR);
+		
+		//Thread.sleep(5000);
+		monitor.worked(10);
+		monitor.subTask(CREATE_SOURCE_FOLDER_STR + PRIVATE_STR);
+		//Thread.sleep(5000);
+		 createSourceFolder(project,monitor,PRIVATE_STR);
+		monitor.worked(10);
+		monitor.subTask(COPY_JAVA_FILE_STR + PRIVATE_STR);
+		// "\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
+		File file = new File(path + "\\classes");
+		if (file.exists() && file.list().length != 0) {
+			String[] fileData = convertAllChildDir(file);
+			 copyFile(project,new SubProgressMonitor(monitor,
+			 1),fileData,PUBLIC_STR);
+		}
+		//Thread.sleep(5000);
+		monitor.worked(10);
+		monitor.subTask(COPY_JAVA_FILE_STR + CLIENT_STR);
+		file = new File(path + "\\client\\classes");
+		if (file.exists() && file.list().length != 0) {
+			String[] fileData = convertAllChildDir(file);
+			 copyFile(project,new SubProgressMonitor(monitor,
+			 1),fileData,CLIENT_STR);
+		}
+		//Thread.sleep(5000);
+		monitor.worked(10);
+		monitor.subTask(COPY_JAVA_FILE_STR + PRIVATE_STR);
+		file = new File(path + "\\META-INF\\classes");
+		if (file.exists() && file.list().length != 0) {
+			String[] fileData = convertAllChildDir(file);
+			 copyFile(project,new SubProgressMonitor(monitor,
+			 1),fileData,PUBLIC_STR);
+		}
+		//Thread.sleep(5000);
+		monitor.worked(10);
 		return true;
 	}
-	private String [] convertAllChildDir(File file){
-		ArrayList<String> dirList=new ArrayList<String>();
-		for(String s:file.list()){
-			dirList.add(file.getAbsolutePath()+File.separator+s);
+
+	private String[] convertAllChildDir(File file) {
+		ArrayList<String> dirList = new ArrayList<String>();
+		for (String s : file.list()) {
+			dirList.add(file.getAbsolutePath() + File.separator + s);
 		}
-		return dirList.toArray(new String[]{});		
+		return dirList.toArray(new String[] {});
 	}
-	private void copyFile(IJavaProject project,IProgressMonitor monitor,String []fileData,String sourcePath){
-		fCurrJProject=project;
-		IPath path= fCurrJProject.getPath().append(new Path(sourcePath));
-		fWorkspaceRoot=ResourcesPlugin.getWorkspace().getRoot();
-		IResource res= fWorkspaceRoot.findMember(path);
-		IPackageFragmentRoot root= fCurrJProject.getPackageFragmentRoot(res);
-		Folder container=(Folder)root.getResource();
+
+	private void copyFile(IJavaProject project, IProgressMonitor monitor,
+			String[] fileData, String sourcePath) {
+		fCurrJProject = project;
+		IPath path = fCurrJProject.getPath().append(new Path(sourcePath));
+		fWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IResource res = fWorkspaceRoot.findMember(path);
+		IPackageFragmentRoot root = fCurrJProject.getPackageFragmentRoot(res);
+		Folder container = (Folder) root.getResource();
 		IFileStore[] stores = buildFileStores(fileData);
 		if (stores == null) {
 			return;
@@ -246,18 +319,18 @@ public class ImportPatchWizard extends Wizard {
 			errorStatus = null;
 		}
 	}
+
 	private void performFileImport(IFileStore[] stores, IContainer target,
 			IProgressMonitor monitor) {
 		IOverwriteQuery query = new IOverwriteQuery() {
 			public String queryOverwrite(String pathString) {
-				if (true) {//全部覆盖
+				if (true) {// 全部覆盖
 					return ALL;
 				}
 
 				final String returnCode[] = { CANCEL };
 				final String msg = NLS
-						.bind(
-								IDEWorkbenchMessages.CopyFilesAndFoldersOperation_overwriteQuestion,
+						.bind(IDEWorkbenchMessages.CopyFilesAndFoldersOperation_overwriteQuestion,
 								pathString);
 				final String[] options = { IDialogConstants.YES_LABEL,
 						IDialogConstants.YES_TO_ALL_LABEL,
@@ -322,19 +395,22 @@ public class ImportPatchWizard extends Wizard {
 			errorStatus.merge(status);
 		}
 	}
+
 	private void display(InvocationTargetException e) {
 		// CoreExceptions are collected above, but unexpected runtime
 		// exceptions and errors may still occur.
-		IDEWorkbenchPlugin.getDefault().getLog().log(
-				StatusUtil.newStatus(IStatus.ERROR, MessageFormat.format(
+		IDEWorkbenchPlugin
+				.getDefault()
+				.getLog()
+				.log(StatusUtil.newStatus(IStatus.ERROR, MessageFormat.format(
 						"Exception in {0}.performCopy(): {1}", //$NON-NLS-1$
 						new Object[] { getClass().getName(),
 								e.getTargetException() }), null));
 		displayError(NLS
-				.bind(
-						IDEWorkbenchMessages.CopyFilesAndFoldersOperation_internalError,
+				.bind(IDEWorkbenchMessages.CopyFilesAndFoldersOperation_internalError,
 						e.getTargetException().getMessage()));
 	}
+
 	private String validateImportDestinationInternal(IContainer destination,
 			IFileStore[] sourceStores) {
 		if (!isAccessible(destination))
@@ -345,10 +421,10 @@ public class ImportPatchWizard extends Wizard {
 			try {
 				destinationStore = EFS.getStore(destination.getLocationURI());
 			} catch (CoreException exception) {
-				IDEWorkbenchPlugin.log(exception.getLocalizedMessage(), exception);
+				IDEWorkbenchPlugin.log(exception.getLocalizedMessage(),
+						exception);
 				return NLS
-						.bind(
-								IDEWorkbenchMessages.CopyFilesAndFoldersOperation_internalError,
+						.bind(IDEWorkbenchMessages.CopyFilesAndFoldersOperation_internalError,
 								exception.getLocalizedMessage());
 			}
 			for (int i = 0; i < sourceStores.length; i++) {
@@ -358,10 +434,9 @@ public class ImportPatchWizard extends Wizard {
 				if (sourceStore != null) {
 					if (destinationStore.equals(sourceStore)
 							|| (sourceParentStore != null && destinationStore
-							.equals(sourceParentStore))) {
+									.equals(sourceParentStore))) {
 						return NLS
-								.bind(
-										IDEWorkbenchMessages.CopyFilesAndFoldersOperation_importSameSourceAndDest,
+								.bind(IDEWorkbenchMessages.CopyFilesAndFoldersOperation_importSameSourceAndDest,
 										sourceStore.getName());
 					}
 					// work around bug 16202. replacement for
@@ -374,14 +449,16 @@ public class ImportPatchWizard extends Wizard {
 		}
 		return null;
 	}
+
 	private void displayError(final String message) {
 		getShell().getDisplay().syncExec(new Runnable() {
 			public void run() {
-				MessageDialog.openError(getShell(), getProblemsTitle(),
-						message);
+				MessageDialog
+						.openError(getShell(), getProblemsTitle(), message);
 			}
 		});
 	}
+
 	private void displayError(final IStatus status) {
 		getShell().getDisplay().syncExec(new Runnable() {
 			public void run() {
@@ -390,6 +467,7 @@ public class ImportPatchWizard extends Wizard {
 			}
 		});
 	}
+
 	IStatus checkExist(IFileStore[] stores) {
 		MultiStatus multiStatus = new MultiStatus(PlatformUI.PLUGIN_ID,
 				IStatus.OK, getProblemsMessage(), null);
@@ -397,8 +475,7 @@ public class ImportPatchWizard extends Wizard {
 		for (int i = 0; i < stores.length; i++) {
 			if (stores[i].fetchInfo().exists() == false) {
 				String message = NLS
-						.bind(
-								IDEWorkbenchMessages.CopyFilesAndFoldersOperation_resourceDeleted,
+						.bind(IDEWorkbenchMessages.CopyFilesAndFoldersOperation_resourceDeleted,
 								stores[i].getName());
 				IStatus status = new Status(IStatus.ERROR,
 						PlatformUI.PLUGIN_ID, IStatus.OK, message, null);
@@ -407,6 +484,7 @@ public class ImportPatchWizard extends Wizard {
 		}
 		return multiStatus;
 	}
+
 	private boolean isAccessible(IResource resource) {
 		switch (resource.getType()) {
 		case IResource.FILE:
@@ -419,31 +497,41 @@ public class ImportPatchWizard extends Wizard {
 			return false;
 		}
 	}
+
 	protected String getProblemsMessage() {
 		return IDEWorkbenchMessages.CopyFilesAndFoldersOperation_problemMessage;
 	}
-	private void createPackage(IJavaProject project,IProgressMonitor monitor) throws JavaModelException{
-		fCurrJProject=project;
-		IPath path= fCurrJProject.getPath().append(new Path("src/public"));
-		fWorkspaceRoot=ResourcesPlugin.getWorkspace().getRoot();
-		IResource res= fWorkspaceRoot.findMember(path);
-		IPackageFragmentRoot root= fCurrJProject.getPackageFragmentRoot(res);
-		IPackageFragment pack=root.getPackageFragment("com.yonyou.zhaoxmf.plugin");
+
+	private void createPackage(IJavaProject project, IProgressMonitor monitor)
+			throws JavaModelException {
+		fCurrJProject = project;
+		IPath path = fCurrJProject.getPath().append(new Path("public"));
+		fWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IResource res = fWorkspaceRoot.findMember(path);
+		IPackageFragmentRoot root = fCurrJProject.getPackageFragmentRoot(res);
+		IPackageFragment pack = root
+				.getPackageFragment("com.yonyou.zhaoxmf.plugin");
 		if (!pack.exists()) {
-			String packName= pack.getElementName();
-			pack= root.createPackageFragment(packName, true, new SubProgressMonitor(monitor, 1));
+			String packName = pack.getElementName();
+			pack = root.createPackageFragment(packName, true,
+					new SubProgressMonitor(monitor, 1));
 		} else {
 			monitor.worked(1);
 		}
-		
+
 	}
-	private boolean createSourceFolder(IJavaProject project,IProgressMonitor monitor,String str) throws OperationCanceledException, CoreException, InterruptedException{
+
+	private boolean createSourceFolder(IJavaProject project,
+			IProgressMonitor monitor, String str)
+			throws OperationCanceledException, CoreException,
+			InterruptedException {
 		if (monitor == null) {
-			monitor= new NullProgressMonitor();
+			monitor = new NullProgressMonitor();
 		}
-		monitor.beginTask(NewWizardMessages.NewSourceFolderWizardPage_operation, 3);
+		monitor.beginTask(
+				NewWizardMessages.NewSourceFolderWizardPage_operation, 3);
 		fProjectStatus = new StatusInfo();
-		fRootStatus=new StatusInfo();
+		fRootStatus = new StatusInfo();
 		fWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 		fCurrJProject = project;
 		fEntries = fCurrJProject.getRawClasspath();
@@ -478,10 +566,9 @@ public class ImportPatchWizard extends Wizard {
 						return false;
 					}
 				} else {
-					if (!ResourcesPlugin
-							.getWorkspace()
-							.validateFiltered(
-									fWorkspaceRoot.getFolder(path)).isOK()) {
+					if (!ResourcesPlugin.getWorkspace()
+							.validateFiltered(fWorkspaceRoot.getFolder(path))
+							.isOK()) {
 						fRootStatus
 								.setError(NewWizardMessages.NewSourceFolderWizardPage_error_FolderNameFiltered);
 						return false;
@@ -527,8 +614,8 @@ public class ImportPatchWizard extends Wizard {
 
 				IClasspathAttribute[] attributes;
 				attributes = new IClasspathAttribute[] {};
-				IClasspathEntry newEntry = JavaCore.newSourceEntry(path,
-						null, null, null, attributes);
+				IClasspathEntry newEntry = JavaCore.newSourceEntry(path, null,
+						null, null, attributes);
 
 				Set<IClasspathEntry> modified = new HashSet<IClasspathEntry>();
 
@@ -536,18 +623,17 @@ public class ImportPatchWizard extends Wizard {
 					fIsProjectAsSourceFolder = true;
 					newEntries.set(projectEntryIndex, newEntry);
 				} else {
-					IClasspathEntry entry = JavaCore.newSourceEntry(path,
-							null, null, null, attributes);
+					IClasspathEntry entry = JavaCore.newSourceEntry(path, null,
+							null, null, attributes);
 					insertAtEndOfCategory(entry, newEntries);
 				}
 
-				fNewEntries = newEntries
-						.toArray(new IClasspathEntry[newEntries.size()]);
+				fNewEntries = newEntries.toArray(new IClasspathEntry[newEntries
+						.size()]);
 				fNewOutputLocation = fOutputLocation;
 
-				IJavaModelStatus status = JavaConventions
-						.validateClasspath(fCurrJProject, fNewEntries,
-								fNewOutputLocation);
+				IJavaModelStatus status = JavaConventions.validateClasspath(
+						fCurrJProject, fNewEntries, fNewOutputLocation);
 				if (!status.isOK()) {
 					if (fOutputLocation.equals(projPath)) {
 						fNewOutputLocation = projPath
@@ -555,9 +641,8 @@ public class ImportPatchWizard extends Wizard {
 										.getPreferenceStore()
 										.getString(
 												PreferenceConstants.SRCBIN_BINNAME));
-						IStatus status2 = JavaConventions
-								.validateClasspath(fCurrJProject,
-										fNewEntries, fNewOutputLocation);
+						IStatus status2 = JavaConventions.validateClasspath(
+								fCurrJProject, fNewEntries, fNewOutputLocation);
 						if (status2.isOK()) {
 							if (fIsProjectAsSourceFolder) {
 								fRootStatus
@@ -598,50 +683,48 @@ public class ImportPatchWizard extends Wizard {
 				}
 			}
 		}
-		projPath= fCurrJProject.getProject().getFullPath();
-		if (fOutputLocation.equals(projPath) && !fNewOutputLocation.equals(projPath)) {
+		projPath = fCurrJProject.getProject().getFullPath();
+		if (fOutputLocation.equals(projPath)
+				&& !fNewOutputLocation.equals(projPath)) {
 			if (BuildPathsBlock.hasClassfiles(fCurrJProject.getProject())) {
-				if (BuildPathsBlock.getRemoveOldBinariesQuery(getShell()).doQuery(false, projPath)) {
-					BuildPathsBlock.removeOldClassfiles(fCurrJProject.getProject());
+				if (BuildPathsBlock.getRemoveOldBinariesQuery(getShell())
+						.doQuery(false, projPath)) {
+					BuildPathsBlock.removeOldClassfiles(fCurrJProject
+							.getProject());
 				}
 			}
 		}
 
-
-		IFolder folder= fCurrJProject.getProject().getFolder(str);
+		IFolder folder = fCurrJProject.getProject().getFolder(str);
 		if (!folder.exists()) {
-			CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 1));
+			CoreUtility.createFolder(folder, true, true,
+					new SubProgressMonitor(monitor, 1));
 		}
 		if (monitor.isCanceled()) {
 			throw new InterruptedException();
 		}
 
-		fCurrJProject.setRawClasspath(fNewEntries, fNewOutputLocation, new SubProgressMonitor(monitor, 2));
+		fCurrJProject.setRawClasspath(fNewEntries, fNewOutputLocation,
+				new SubProgressMonitor(monitor, 2));
 
-		fCreatedRoot= fCurrJProject.getPackageFragmentRoot(folder);
+		fCreatedRoot = fCurrJProject.getPackageFragmentRoot(folder);
 
 		fProjectStatus.setOK();
 		return true;
-	
+
 	}
+
 	private void insertAtEndOfCategory(IClasspathEntry entry,
 			List<IClasspathEntry> entries) {
 		int length = entries.size();
 		IClasspathEntry[] elements = entries
 				.toArray(new IClasspathEntry[length]);
-		/*int i = 0;
-		while (i < length && elements[i].getEntryKind() != entry.getEntryKind()) {
-			i++;
-		}
-		if (i < length) {
-			i++;
-			while (i < length
-					&& elements[i].getEntryKind() == entry.getEntryKind()) {
-				i++;
-			}
-			entries.add(i, entry);
-			return;
-		}*/
+		/*
+		 * int i = 0; while (i < length && elements[i].getEntryKind() !=
+		 * entry.getEntryKind()) { i++; } if (i < length) { i++; while (i <
+		 * length && elements[i].getEntryKind() == entry.getEntryKind()) { i++;
+		 * } entries.add(i, entry); return; }
+		 */
 		switch (entry.getEntryKind()) {
 		case IClasspathEntry.CPE_SOURCE:
 			entries.add(0, entry);
@@ -660,10 +743,9 @@ public class ImportPatchWizard extends Wizard {
 	public void addPages() {
 		page1 = new ImportPatchWizardPage1(window);
 		page2 = new ImportPatchWizardPage2();
-		page3 = new ImportPatchWizardPage3();
 		addPage(page1);
 		addPage(page2);
-		addPage(page3);
+		//addPage(page3);
 	}
 
 }
