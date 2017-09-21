@@ -37,13 +37,14 @@ import com.yonyou.zhaoxmf.PluginEclipse.Activator;
 
 public class ImportPatchWizardPage2 extends WizardPage {
 
-	public static String IS_IMPORT_FOLER="IS_IMPORT_FOLER";
-	public static String IMPORT_DIR="IMPORT_DIR";
+	public static final String IS_IMPORT_FOLER="IS_IMPORT_FOLER";
+	public static final String IMPORT_DIR="IMPORT_DIR";
+	public static final String SOURCE_FOLDER_POSTFIX="SOURCE_FOLDER_POSTFIX";
+	public static String postfix="";
+	
 	IPreferenceStore preferenceStore;
 	private String filePath="";
-	public String getfilePath() {
-		return filePath;
-	}
+	
 	Dialog dirDialog;
 	private Text tipText=null;
 	private Button openButton=null;
@@ -54,6 +55,12 @@ public class ImportPatchWizardPage2 extends WizardPage {
 		preferenceStore=Activator.getDefault().getPreferenceStore();/*
 		setImageDescriptor(ImageKeys.
 				getImageDescriptor(ImageKeys.IMG_WIZARD_NEW));*/
+	}
+	public String getfilePath() {
+		return filePath;
+	}
+	public static String getPostfix() {
+		return postfix;
 	}
 
 	@Override
@@ -178,10 +185,17 @@ public class ImportPatchWizardPage2 extends WizardPage {
 	     postfixLabel.setText("资源文件夹后缀(非必输项),如public_");
 	     postfixLabel.setLayoutData(new GridData(SWT.LEFT,SWT.CENTER,false,false,4,1));
 	     
-	     Text postfixText=new Text(container, SWT.BORDER);
+	     final Text postfixText=new Text(container, SWT.BORDER);
 	     postfixText.setLayoutData(new GridData(SWT.FILL,SWT.CENTER,true,false,1,1));
 	     postfixText.setEnabled(true);
-	     
+	     postfixText.setText(preferenceStore.getString(SOURCE_FOLDER_POSTFIX));
+	     postfixText.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				preferenceStore.setValue(SOURCE_FOLDER_POSTFIX,postfixText.getText().trim());
+				postfix=postfixText.getText().trim();
+			}
+		});
 	     button.addSelectionListener(new SelectionListener() {
 			
 			@Override
