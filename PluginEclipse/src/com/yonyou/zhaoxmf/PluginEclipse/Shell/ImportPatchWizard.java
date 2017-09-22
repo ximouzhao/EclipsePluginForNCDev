@@ -86,11 +86,13 @@ import org.eclipse.ui.internal.ide.dialogs.IDEResourceInfoUtils;
 import org.eclipse.ui.wizards.datatransfer.FileStoreStructureProvider;
 import org.eclipse.ui.wizards.datatransfer.ImportOperation;
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 import com.yonyou.zhaoxmf.PluginEclipse.Activator;
 
 public class ImportPatchWizard extends Wizard {
 	IWorkbenchWindow window;
 	ISelection selection;
+
 	public ISelection getSelection() {
 		return selection;
 	}
@@ -106,13 +108,13 @@ public class ImportPatchWizard extends Wizard {
 	public static final String CREATE_SOURCE_FOLDER_STR = "正在创建source folder：";
 	public static final String COPY_JAVA_FILE_STR = "正在复制java文件到：";
 
-	public static String postfix="";
-	public static String filePath="";
-	//加后缀后的目录名
-	public static String public_str_with_postfix=PUBLIC_STR;
-	public static String private_str_with_postfix=PRIVATE_STR;
-	public static String client_str_with_postfix=CLIENT_STR;
-	
+	public static String postfix = "";
+	public static String[] filePathArr;
+	// 加后缀后的目录名
+	public static String public_str_with_postfix = PUBLIC_STR;
+	public static String private_str_with_postfix = PRIVATE_STR;
+	public static String client_str_with_postfix = CLIENT_STR;
+
 	public ImportPatchWizard(IWorkbenchWindow window) {
 		super();
 		setNeedsProgressMonitor(true);
@@ -133,116 +135,148 @@ public class ImportPatchWizard extends Wizard {
 	private StatusInfo fRootStatus;
 	private MultiStatus errorStatus;
 	boolean fIsProjectAsSourceFolder = false;
-	
+
 	private boolean isClearAlreadyPatch;
+
 	@Override
 	public boolean performFinish() {
 		return doFinish();
 	}
-	
-	/**
-     * 解压文件
-     * 
-     * @param filePath
-     *            压缩文件路径
-	 * @throws IOException 
-     */
-    public static void unzip(String filePath,String toFilePath) throws IOException {
-        File source = new File(filePath);
-        if (source.exists()) {
-            ZipInputStream zis = null;
-            BufferedOutputStream bos = null;
-            try {
-                zis = new ZipInputStream(new FileInputStream(source));
-                ZipEntry entry = null;
-                while ((entry = zis.getNextEntry()) != null
-                        && !entry.isDirectory()) {
-                    File target =new File(toFilePath, entry.getName());
-                    if (!target.getParentFile().exists()) {
-                        // 创建文件父目录
-                        target.getParentFile().mkdirs();
-                    }
-                    // 写入文件
-                    bos = new BufferedOutputStream(new FileOutputStream(target));
-                    int read = 0;
-                    byte[] buffer = new byte[1024 * 10];
-                    while ((read = zis.read(buffer, 0, buffer.length)) != -1) {
-                        bos.write(buffer, 0, read);
-                    }
-                    bos.flush();
-                }
-                zis.closeEntry();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                bos.close();
-                zis.close();
-            }
-        }
-    }
-    public static String getFileNameNoEx(String filename) { 
-        if ((filename != null) && (filename.length() > 0)) { 
-            int dot = filename.lastIndexOf('.'); 
-            if ((dot >-1) && (dot < (filename.length()))) { 
-                return filename.substring(0, dot); 
-            } 
-        } 
-        return filename; 
-    }
-	private boolean doFinish() {
 
+	/**
+	 * 解压文件
+	 * 
+	 * @param filePath
+	 *            压缩文件路径
+	 * @throws IOException
+	 */
+	public static void unzip(String filePath, String toFilePath)
+			throws IOException {
+		File source = new File(filePath);
+		if (source.exists()) {
+			ZipInputStream zis = null;
+			BufferedOutputStream bos = null;
+			try {
+				zis = new ZipInputStream(new FileInputStream(source));
+				ZipEntry entry = null;
+				while ((entry = zis.getNextEntry()) != null
+						&& !entry.isDirectory()) {
+					File target = new File(toFilePath, entry.getName());
+					if (!target.getParentFile().exists()) {
+						// 创建文件父目录
+						target.getParentFile().mkdirs();
+					}
+					// 写入文件
+					bos = new BufferedOutputStream(new FileOutputStream(target));
+					int read = 0;
+					byte[] buffer = new byte[1024 * 10];
+					while ((read = zis.read(buffer, 0, buffer.length)) != -1) {
+						bos.write(buffer, 0, read);
+					}
+					bos.flush();
+				}
+				zis.closeEntry();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				bos.close();
+				zis.close();
+			}
+		}
+	}
+
+	public static String getFileNameNoEx(String filename) {
+		if ((filename != null) && (filename.length() > 0)) {
+			int dot = filename.lastIndexOf('.');
+			if ((dot > -1) && (dot < (filename.length()))) {
+				return filename.substring(0, dot);
+			}
+		}
+		return filename;
+	}
+
+	private boolean doFinish() {
+		String filePath;
 		try {
 			final ArrayList<IJavaProject> list = page1.getJavaProject();
 			filePath = page2.getfilePath();
 			if (list == null || list.size() == 0 || filePath == null
 					|| filePath.equals("")) {
 				throw new Exception("请选择项目并设置导入的路径");
-			};
-			
-			if(new File(filePath).isFile()&&filePath.endsWith(".zip")){
-				String extractPatchFolder=System.getProperty("user.home")+File.separator+"ExtractPatchTemp";
-				File extractPatchTempFile=new File(extractPatchFolder);
-				if(!extractPatchTempFile.exists()){
+			}
+			;
+			File tempImportFile = new File(filePath);
+			if (tempImportFile.isFile() && page2.isImportFloder()) {
+				throw new Exception("选择的导入类型为模块，而当前路径是文件");
+			}
+			if (tempImportFile.isDirectory() && !page2.isImportFloder()) {
+				throw new Exception("选择的导入类型为补丁文件，而当前路径是目录");
+			}
+			if (new File(filePath).isFile() && filePath.endsWith(".zip")) {
+				String extractPatchFolder = System.getProperty("user.home")
+						+ File.separator + "ExtractPatchTemp";
+				File extractPatchTempFile = new File(extractPatchFolder);
+				if (!extractPatchTempFile.exists()) {
 					extractPatchTempFile.mkdir();
 				}
-				String filenameNoEx=getFileNameNoEx(new File(filePath).getName());
-				unzip(filePath, extractPatchFolder+File.separator+filenameNoEx);
-				String patchModulesPath=extractPatchFolder+File.separator+
-						filenameNoEx+File.separator+"replacement"+File.separator+"modules";
-				File patchModulesPathFile=new File(patchModulesPath);
-				if(patchModulesPathFile.exists()&&patchModulesPathFile.list()!=null&&patchModulesPathFile.list().length>=1){
-					patchModulesPath+=File.separator+patchModulesPathFile.list()[0];
-					filePath=patchModulesPath;
-				}else{
+				String filenameNoEx = getFileNameNoEx(new File(filePath)
+						.getName());
+				unzip(filePath, extractPatchFolder + File.separator
+						+ filenameNoEx);
+				String patchModulesPath = extractPatchFolder + File.separator
+						+ filenameNoEx + File.separator + "replacement"
+						+ File.separator + "modules";
+				File patchModulesPathFile = new File(patchModulesPath);
+				if (patchModulesPathFile.exists()
+						&& patchModulesPathFile.list() != null
+						&& patchModulesPathFile.list().length >= 1) {
+					/*
+					 * patchModulesPath+=File.separator+patchModulesPathFile.list
+					 * ()[0]; filePath=patchModulesPath;
+					 */
+					ArrayList<String> importFileList = new ArrayList<>();
+					for (String s : patchModulesPathFile.list()) {
+						importFileList.add(patchModulesPath + File.separator
+								+ s);
+					}
+					filePathArr = importFileList.toArray(new String[0]);
+				} else {
 					throw new Exception("未找到该补丁的补丁文件，请检查该文件是否是补丁文件");
 				}
+			} else {
+				filePathArr = new String[] { filePath };
 			}
 			IWorkspaceRunnable op = new IWorkspaceRunnable() {
 				public void run(IProgressMonitor monitor) throws CoreException {
 					// 最终执行体
 					try {
 						// ResourcesPlugin.getWorkspace().isAutoBuilding();
-						
-						monitor.beginTask("正在导入",list.size());
+
+						monitor.beginTask("正在导入", list.size());
 						for (IJavaProject project : page1.getJavaProject()) {
 							monitor.subTask("导入项目"
 									+ project.getProject().getName());
 							try {
-								
-								isClearAlreadyPatch=page1.getButtonSelection();
-								postfix=page2.getPostfix();
-								if(postfix!=null&&!postfix.equals("")){
-									public_str_with_postfix=PUBLIC_STR+"_"+postfix;
-									private_str_with_postfix=PRIVATE_STR+"_"+postfix;
-									client_str_with_postfix=CLIENT_STR+"_"+postfix;
-								}else{
-									public_str_with_postfix=PUBLIC_STR;
-									private_str_with_postfix=PRIVATE_STR;
-									client_str_with_postfix=CLIENT_STR;
-									
+
+								isClearAlreadyPatch = page1
+										.getButtonSelection();
+								postfix = page2.getPostfix();
+								if (postfix != null && !postfix.equals("")) {
+									public_str_with_postfix = PUBLIC_STR + "_"
+											+ postfix;
+									private_str_with_postfix = PRIVATE_STR
+											+ "_" + postfix;
+									client_str_with_postfix = CLIENT_STR + "_"
+											+ postfix;
+								} else {
+									public_str_with_postfix = PUBLIC_STR;
+									private_str_with_postfix = PRIVATE_STR;
+									client_str_with_postfix = CLIENT_STR;
+
 								}
-								finishPage(project, new SubProgressMonitor(monitor,	1));
-								
+								finishPage(project, new SubProgressMonitor(
+										monitor, 1));
+
 							} catch (OperationCanceledException e) {
 								e.printStackTrace();
 							} catch (InterruptedException e) {
@@ -316,68 +350,81 @@ public class ImportPatchWizard extends Wizard {
 	private boolean finishPage(IJavaProject project, IProgressMonitor monitor)
 			throws OperationCanceledException, CoreException,
 			InterruptedException {
-		//createPackage(project,monitor);
-		
+		// createPackage(project,monitor);
 
 		monitor.beginTask("", 60);
-		
-		if(isClearAlreadyPatch){
-			final IPath path1 = project.getPath().append(public_str_with_postfix);
-			IPackageFragmentRoot ifr1=project.findPackageFragmentRoot(path1);
-			if(ifr1!=null)ifr1.delete(IResource.KEEP_HISTORY, IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH, monitor);
-			
-			final IPath path2 = project.getPath().append(client_str_with_postfix);
-			IPackageFragmentRoot ifr2=project.findPackageFragmentRoot(path2);
-			if(ifr2!=null)ifr2.delete(IResource.KEEP_HISTORY, IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH, monitor);
-			
-			final IPath path3 = project.getPath().append(private_str_with_postfix);
-			IPackageFragmentRoot ifr3=project.findPackageFragmentRoot(path3);
-			if(ifr3!=null)ifr3.delete(IResource.KEEP_HISTORY, IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH, monitor);
+
+		if (isClearAlreadyPatch) {
+			final IPath path1 = project.getPath().append(
+					public_str_with_postfix);
+			IPackageFragmentRoot ifr1 = project.findPackageFragmentRoot(path1);
+			if (ifr1 != null)
+				ifr1.delete(IResource.KEEP_HISTORY,
+						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
+						monitor);
+
+			final IPath path2 = project.getPath().append(
+					client_str_with_postfix);
+			IPackageFragmentRoot ifr2 = project.findPackageFragmentRoot(path2);
+			if (ifr2 != null)
+				ifr2.delete(IResource.KEEP_HISTORY,
+						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
+						monitor);
+
+			final IPath path3 = project.getPath().append(
+					private_str_with_postfix);
+			IPackageFragmentRoot ifr3 = project.findPackageFragmentRoot(path3);
+			if (ifr3 != null)
+				ifr3.delete(IResource.KEEP_HISTORY,
+						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
+						monitor);
 		}
-	
+
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + client_str_with_postfix);
-		
-		 createSourceFolder(project,monitor,client_str_with_postfix);
-		//Thread.sleep(5000);
+
+		createSourceFolder(project, monitor, client_str_with_postfix);
+		// Thread.sleep(5000);
 		monitor.worked(10);
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + public_str_with_postfix);
-		 createSourceFolder(project,monitor,public_str_with_postfix);
-		
-		//Thread.sleep(5000);
+		createSourceFolder(project, monitor, public_str_with_postfix);
+
+		// Thread.sleep(5000);
 		monitor.worked(10);
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + private_str_with_postfix);
-		//Thread.sleep(5000);
-		 createSourceFolder(project,monitor,private_str_with_postfix);
+		// Thread.sleep(5000);
+		createSourceFolder(project, monitor, private_str_with_postfix);
 		monitor.worked(10);
 		monitor.subTask(COPY_JAVA_FILE_STR + private_str_with_postfix);
-		
+
 		// "\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
-		File file = new File(filePath + "\\classes");
-		if (file.exists() && file.list().length != 0) {
-			String[] fileData = convertAllChildDir(file);
-			 copyFile(project,new SubProgressMonitor(monitor,
-			 1),fileData,public_str_with_postfix);
+		for (String filePath : filePathArr) {
+			File file = new File(filePath + "\\classes");
+			if (file.exists() && file.list().length != 0) {
+				String[] fileData = convertAllChildDir(file);
+				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
+						public_str_with_postfix);
+			}
+			// Thread.sleep(5000);
+			monitor.worked(10);
+			monitor.subTask(COPY_JAVA_FILE_STR + client_str_with_postfix);
+			file = new File(filePath + "\\client\\classes");
+			if (file.exists() && file.list().length != 0) {
+				String[] fileData = convertAllChildDir(file);
+				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
+						client_str_with_postfix);
+			}
+			// Thread.sleep(5000);
+			monitor.worked(10);
+			monitor.subTask(COPY_JAVA_FILE_STR + private_str_with_postfix);
+			file = new File(filePath + "\\META-INF\\classes");
+			if (file.exists() && file.list().length != 0) {
+				String[] fileData = convertAllChildDir(file);
+				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
+						private_str_with_postfix);
+			}
+			// Thread.sleep(5000);
+			monitor.worked(10);
 		}
-		//Thread.sleep(5000);
-		monitor.worked(10);
-		monitor.subTask(COPY_JAVA_FILE_STR + client_str_with_postfix);
-		file = new File(filePath + "\\client\\classes");
-		if (file.exists() && file.list().length != 0) {
-			String[] fileData = convertAllChildDir(file);
-			 copyFile(project,new SubProgressMonitor(monitor,
-			 1),fileData,client_str_with_postfix);
-		}
-		//Thread.sleep(5000);
-		monitor.worked(10);
-		monitor.subTask(COPY_JAVA_FILE_STR + private_str_with_postfix);
-		file = new File(filePath + "\\META-INF\\classes");
-		if (file.exists() && file.list().length != 0) {
-			String[] fileData = convertAllChildDir(file);
-			 copyFile(project,new SubProgressMonitor(monitor,
-			 1),fileData,private_str_with_postfix);
-		}
-		//Thread.sleep(5000);
-		monitor.worked(10);
 		return true;
 	}
 
@@ -848,7 +895,7 @@ public class ImportPatchWizard extends Wizard {
 		page2 = new ImportPatchWizardPage2();
 		addPage(page1);
 		addPage(page2);
-		//addPage(page3);
+		// addPage(page3);
 	}
 
 }

@@ -44,7 +44,8 @@ public class ImportPatchWizardPage2 extends WizardPage {
 	
 	IPreferenceStore preferenceStore;
 	private String filePath="";
-	
+	private boolean isImportFloder=false;
+
 	Dialog dirDialog;
 	private Text tipText=null;
 	private Button openButton=null;
@@ -62,7 +63,9 @@ public class ImportPatchWizardPage2 extends WizardPage {
 	public static String getPostfix() {
 		return postfix;
 	}
-
+	public boolean isImportFloder() {
+		return isImportFloder;
+	}
 	@Override
 	public void createControl(Composite parent) {
 		
@@ -77,6 +80,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 		 final Button radioImportFoler=new Button(group, SWT.RADIO);
 		 radioImportFoler.setText("选取模块目录");
 		 
+		 isImportFloder=preferenceStore.getBoolean("IS_IMPORT_FOLER");
 		 radioImportFoler.addSelectionListener(new SelectionListener() {
 			
 			@Override
@@ -85,6 +89,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 					  dirDialog=new DirectoryDialog(getShell());
 					  dirDialog.setText("请选择模块路径");
 					  preferenceStore.setValue(IS_IMPORT_FOLER, true);
+					  isImportFloder=true;
 				}
 			}
 			
@@ -94,6 +99,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 					  dirDialog=new DirectoryDialog(getShell());
 					  dirDialog.setText("请选择模块路径");
 					  preferenceStore.setValue(IS_IMPORT_FOLER, true);
+					  isImportFloder=true;
 				}
 			}
 		});
@@ -107,6 +113,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 					  ((FileDialog)dirDialog).setFilterExtensions(new String[]{"*.zip"});
 					  dirDialog.setText("请选择补丁文件");
 					  preferenceStore.setValue(IS_IMPORT_FOLER, false);
+					  isImportFloder=false;
 				}
 			}
 			
@@ -117,6 +124,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 					  ((FileDialog)dirDialog).setFilterExtensions(new String[]{"*.zip"});
 					  dirDialog.setText("请选择补丁文件");
 					  preferenceStore.setValue(IS_IMPORT_FOLER, false);
+					  isImportFloder=false;
 				}
 			}
 		});
