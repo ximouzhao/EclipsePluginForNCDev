@@ -133,7 +133,7 @@ public class ClearCacheDialog extends Dialog{
 		/*return super.createButton(parent, id, label, defaultButton);*/
 		return null;
 	}
-	private static boolean deleteDir(File dir) {
+	public static boolean deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
             //递归删除目录中的子目录下

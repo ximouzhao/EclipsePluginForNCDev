@@ -196,10 +196,10 @@ public class ImportPatchWizard extends Wizard {
 	}
 
 	private boolean doFinish() {
-		String filePath;
+		String filePath= page2.getfilePath();
+		String extractPatchFolder="";
 		try {
 			final ArrayList<IJavaProject> list = page1.getJavaProject();
-			filePath = page2.getfilePath();
 			if (list == null || list.size() == 0 || filePath == null
 					|| filePath.equals("")) {
 				throw new Exception("请选择项目并设置导入的路径");
@@ -213,7 +213,7 @@ public class ImportPatchWizard extends Wizard {
 				throw new Exception("选择的导入类型为补丁文件，而当前路径是目录");
 			}
 			if (new File(filePath).isFile() && filePath.endsWith(".zip")) {
-				String extractPatchFolder = System.getProperty("user.home")
+				extractPatchFolder = System.getProperty("user.home")
 						+ File.separator + "ExtractPatchTemp";
 				File extractPatchTempFile = new File(extractPatchFolder);
 				if (!extractPatchTempFile.exists()) {
@@ -304,6 +304,11 @@ public class ImportPatchWizard extends Wizard {
 			e.printStackTrace();
 			MessageDialog.openInformation(getShell(), "错误", e.getMessage());
 			return false;
+		}finally{
+			File file=new File(extractPatchFolder);
+			if(new File(filePath).isFile() && filePath.endsWith(".zip")&&file.exists()){
+				ClearCacheDialog.deleteDir(file);
+			}
 		}
 		return true;
 	}
