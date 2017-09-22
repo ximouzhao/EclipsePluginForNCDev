@@ -151,7 +151,7 @@ public class ImportPatchWizard extends Wizard {
 	 * @throws IOException
 	 */
 	public static void unzip(String filePath, String toFilePath)
-			throws IOException {
+			throws Exception {
 		File source = new File(filePath);
 		if (source.exists()) {
 			ZipInputStream zis = null;
@@ -159,28 +159,29 @@ public class ImportPatchWizard extends Wizard {
 			try {
 				zis = new ZipInputStream(new FileInputStream(source));
 				ZipEntry entry = null;
-				while ((entry = zis.getNextEntry()) != null
-						&& !entry.isDirectory()) {
-					File target = new File(toFilePath, entry.getName());
-					if (!target.getParentFile().exists()) {
-						// 创建文件父目录
-						target.getParentFile().mkdirs();
+				while ((entry=zis.getNextEntry())!=null) {
+					if(!entry.isDirectory()){
+						File target = new File(toFilePath, entry.getName());
+						if (!target.getParentFile().exists()) {
+							// 创建文件父目录
+							target.getParentFile().mkdirs();
+						}
+						// 写入文件
+						bos = new BufferedOutputStream(new FileOutputStream(target));
+						int read = 0;
+						byte[] buffer = new byte[1024 * 10];
+						while ((read = zis.read(buffer, 0, buffer.length)) != -1) {
+							bos.write(buffer, 0, read);
+						}
+						bos.flush();
 					}
-					// 写入文件
-					bos = new BufferedOutputStream(new FileOutputStream(target));
-					int read = 0;
-					byte[] buffer = new byte[1024 * 10];
-					while ((read = zis.read(buffer, 0, buffer.length)) != -1) {
-						bos.write(buffer, 0, read);
-					}
-					bos.flush();
 				}
 				zis.closeEntry();
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				throw new Exception(e);
 			} finally {
-				bos.close();
-				zis.close();
+					bos.close();
+					zis.close();
 			}
 		}
 	}
@@ -302,7 +303,7 @@ public class ImportPatchWizard extends Wizard {
 			getContainer().run(canRunForked(), true, runnable);
 		} catch (Exception e) {
 			e.printStackTrace();
-			MessageDialog.openInformation(getShell(), "错误", e.getMessage());
+			MessageDialog.openInformation(getShell(), "错误", e.getMessage()!=null?e.getMessage():e.toString());
 			return false;
 		}finally{
 			File file=new File(extractPatchFolder);
@@ -364,7 +365,7 @@ public class ImportPatchWizard extends Wizard {
 					public_str_with_postfix);
 			IPackageFragmentRoot ifr1 = project.findPackageFragmentRoot(path1);
 			if (ifr1 != null)
-				ifr1.delete(IResource.KEEP_HISTORY,
+				ifr1.delete(IResource.KEEP_HISTORY, 
 						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
 						monitor);
 

@@ -197,6 +197,7 @@ public class ImportPatchWizardPage2 extends WizardPage {
 	     postfixText.setLayoutData(new GridData(SWT.FILL,SWT.CENTER,true,false,1,1));
 	     postfixText.setEnabled(true);
 	     postfixText.setText(preferenceStore.getString(SOURCE_FOLDER_POSTFIX));
+	     postfix=preferenceStore.getString("SOURCE_FOLDER_POSTFIX");
 	     postfixText.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent e) {
