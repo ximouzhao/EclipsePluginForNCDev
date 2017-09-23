@@ -105,6 +105,7 @@ public class ImportPatchWizard extends Wizard {
 	public static final String PRIVATE_STR = "private";
 	public static final String CLIENT_STR = "client";
 
+	public static final String DELETE_SOURCE_FOLDER_STR = "正在清空source folder：";
 	public static final String CREATE_SOURCE_FOLDER_STR = "正在创建source folder：";
 	public static final String COPY_JAVA_FILE_STR = "正在复制java文件到：";
 
@@ -159,15 +160,16 @@ public class ImportPatchWizard extends Wizard {
 			try {
 				zis = new ZipInputStream(new FileInputStream(source));
 				ZipEntry entry = null;
-				while ((entry=zis.getNextEntry())!=null) {
-					if(!entry.isDirectory()){
+				while ((entry = zis.getNextEntry()) != null) {
+					if (!entry.isDirectory()) {
 						File target = new File(toFilePath, entry.getName());
 						if (!target.getParentFile().exists()) {
 							// 创建文件父目录
 							target.getParentFile().mkdirs();
 						}
 						// 写入文件
-						bos = new BufferedOutputStream(new FileOutputStream(target));
+						bos = new BufferedOutputStream(new FileOutputStream(
+								target));
 						int read = 0;
 						byte[] buffer = new byte[1024 * 10];
 						while ((read = zis.read(buffer, 0, buffer.length)) != -1) {
@@ -180,8 +182,8 @@ public class ImportPatchWizard extends Wizard {
 			} catch (IOException e) {
 				throw new Exception(e);
 			} finally {
-					bos.close();
-					zis.close();
+				bos.close();
+				zis.close();
 			}
 		}
 	}
@@ -197,8 +199,8 @@ public class ImportPatchWizard extends Wizard {
 	}
 
 	private boolean doFinish() {
-		String filePath= page2.getfilePath();
-		String extractPatchFolder="";
+		String filePath = page2.getfilePath();
+		String extractPatchFolder = "";
 		try {
 			final ArrayList<IJavaProject> list = page1.getJavaProject();
 			if (list == null || list.size() == 0 || filePath == null
@@ -235,7 +237,7 @@ public class ImportPatchWizard extends Wizard {
 					 * patchModulesPath+=File.separator+patchModulesPathFile.list
 					 * ()[0]; filePath=patchModulesPath;
 					 */
-					ArrayList<String> importFileList = new ArrayList<>();
+					ArrayList<String> importFileList = new ArrayList<String>();
 					for (String s : patchModulesPathFile.list()) {
 						importFileList.add(patchModulesPath + File.separator
 								+ s);
@@ -275,6 +277,7 @@ public class ImportPatchWizard extends Wizard {
 									client_str_with_postfix = CLIENT_STR;
 
 								}
+								//核心代码
 								finishPage(project, new SubProgressMonitor(
 										monitor, 1));
 
@@ -303,11 +306,13 @@ public class ImportPatchWizard extends Wizard {
 			getContainer().run(canRunForked(), true, runnable);
 		} catch (Exception e) {
 			e.printStackTrace();
-			MessageDialog.openInformation(getShell(), "错误", e.getMessage()!=null?e.getMessage():e.toString());
+			MessageDialog.openInformation(getShell(), "错误",
+					e.getMessage() != null ? e.getMessage() : e.toString());
 			return false;
-		}finally{
-			File file=new File(extractPatchFolder);
-			if(new File(filePath).isFile() && filePath.endsWith(".zip")&&file.exists()){
+		} finally {
+			File file = new File(extractPatchFolder);
+			if (new File(filePath).isFile() && filePath.endsWith(".zip")
+					&& file.exists()) {
 				ClearCacheDialog.deleteDir(file);
 			}
 		}
@@ -353,83 +358,57 @@ public class ImportPatchWizard extends Wizard {
 		return ResourcesPlugin.getWorkspace().getRoot(); // look all by default
 	}
 
+
 	private boolean finishPage(IJavaProject project, IProgressMonitor monitor)
 			throws OperationCanceledException, CoreException,
 			InterruptedException {
-		// createPackage(project,monitor);
-
-		monitor.beginTask("", 60);
 
 		if (isClearAlreadyPatch) {
+			monitor.beginTask("", 90);
+			
+			monitor.subTask(DELETE_SOURCE_FOLDER_STR + public_str_with_postfix);
 			final IPath path1 = project.getPath().append(
 					public_str_with_postfix);
-			IPackageFragmentRoot ifr1 = project.findPackageFragmentRoot(path1);
-			if (ifr1 != null)
-				ifr1.delete(IResource.KEEP_HISTORY, 
-						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
-						monitor);
+			deletePackageFragmentRoot(project, path1, monitor);
 
+			monitor.subTask(DELETE_SOURCE_FOLDER_STR + client_str_with_postfix);
 			final IPath path2 = project.getPath().append(
 					client_str_with_postfix);
-			IPackageFragmentRoot ifr2 = project.findPackageFragmentRoot(path2);
-			if (ifr2 != null)
-				ifr2.delete(IResource.KEEP_HISTORY,
-						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
-						monitor);
+			deletePackageFragmentRoot(project, path2, monitor);
 
+			monitor.subTask(DELETE_SOURCE_FOLDER_STR + private_str_with_postfix);
 			final IPath path3 = project.getPath().append(
 					private_str_with_postfix);
-			IPackageFragmentRoot ifr3 = project.findPackageFragmentRoot(path3);
-			if (ifr3 != null)
-				ifr3.delete(IResource.KEEP_HISTORY,
-						IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
-						monitor);
+			deletePackageFragmentRoot(project, path3, monitor);
+
+		}else{
+			monitor.beginTask("", 60);
 		}
 
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + client_str_with_postfix);
+		createSourceFolder(project, new SubProgressMonitor(monitor, 10), client_str_with_postfix);
 
-		createSourceFolder(project, monitor, client_str_with_postfix);
-		// Thread.sleep(5000);
-		monitor.worked(10);
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + public_str_with_postfix);
-		createSourceFolder(project, monitor, public_str_with_postfix);
+		createSourceFolder(project, new SubProgressMonitor(monitor, 10), public_str_with_postfix);
 
-		// Thread.sleep(5000);
-		monitor.worked(10);
+
 		monitor.subTask(CREATE_SOURCE_FOLDER_STR + private_str_with_postfix);
-		// Thread.sleep(5000);
-		createSourceFolder(project, monitor, private_str_with_postfix);
-		monitor.worked(10);
-		monitor.subTask(COPY_JAVA_FILE_STR + private_str_with_postfix);
+		createSourceFolder(project, new SubProgressMonitor(monitor, 10), private_str_with_postfix);
 
-		// "\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc"
 		for (String filePath : filePathArr) {
-			File file = new File(filePath + "\\classes");
-			if (file.exists() && file.list().length != 0) {
-				String[] fileData = convertAllChildDir(file);
-				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
-						public_str_with_postfix);
-			}
-			// Thread.sleep(5000);
-			monitor.worked(10);
+			
+			int process=30/filePathArr.length;
 			monitor.subTask(COPY_JAVA_FILE_STR + client_str_with_postfix);
-			file = new File(filePath + "\\client\\classes");
-			if (file.exists() && file.list().length != 0) {
-				String[] fileData = convertAllChildDir(file);
-				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
-						client_str_with_postfix);
-			}
-			// Thread.sleep(5000);
-			monitor.worked(10);
+			File file = new File(filePath + File.separator+"classes");
+			copyFile(project, new SubProgressMonitor(monitor, process), file, public_str_with_postfix);
+			
+			monitor.subTask(COPY_JAVA_FILE_STR + client_str_with_postfix);
+			file = new File(filePath + File.separator+"client"+File.separator+"classes");
+			copyFile(project, new SubProgressMonitor(monitor, process), file, client_str_with_postfix);
+			
 			monitor.subTask(COPY_JAVA_FILE_STR + private_str_with_postfix);
-			file = new File(filePath + "\\META-INF\\classes");
-			if (file.exists() && file.list().length != 0) {
-				String[] fileData = convertAllChildDir(file);
-				copyFile(project, new SubProgressMonitor(monitor, 1), fileData,
-						private_str_with_postfix);
-			}
-			// Thread.sleep(5000);
-			monitor.worked(10);
+			file = new File(filePath +File.separator+ "META-INF"+File.separator+"classes");
+			copyFile(project, new SubProgressMonitor(monitor, process), file, private_str_with_postfix);
 		}
 		return true;
 	}
@@ -676,7 +655,27 @@ public class ImportPatchWizard extends Wizard {
 		}
 
 	}
-
+	private void copyFile(IJavaProject project, IProgressMonitor monitor,File file,String toPath){
+		monitor.beginTask("", 100);
+		if (file.exists() && file.list().length != 0) {
+			String[] fileData = convertAllChildDir(file);
+			copyFile(project, monitor, fileData,
+					toPath);
+		}else{
+			monitor.worked(100);
+		}
+	}
+	private void deletePackageFragmentRoot(IJavaProject project, IPath path,
+			IProgressMonitor monitor) throws JavaModelException {
+		IPackageFragmentRoot ifr1 = project.findPackageFragmentRoot(path);
+		if (ifr1 != null) {
+			ifr1.delete(IResource.KEEP_HISTORY,
+					IPackageFragmentRoot.ORIGINATING_PROJECT_CLASSPATH,
+					new SubProgressMonitor(monitor, 10));
+		} else {
+			monitor.worked(10);
+		}
+	}
 	private boolean createSourceFolder(IJavaProject project,
 			IProgressMonitor monitor, String str)
 			throws OperationCanceledException, CoreException,
@@ -684,8 +683,9 @@ public class ImportPatchWizard extends Wizard {
 		if (monitor == null) {
 			monitor = new NullProgressMonitor();
 		}
-		monitor.beginTask(
-				NewWizardMessages.NewSourceFolderWizardPage_operation, 3);
+		/*monitor.beginTask(
+				NewWizardMessages.NewSourceFolderWizardPage_operation, 3);*/
+		monitor.beginTask("", 3);
 		fProjectStatus = new StatusInfo();
 		fRootStatus = new StatusInfo();
 		fWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
