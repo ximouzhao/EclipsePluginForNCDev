@@ -37,7 +37,7 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 			
 			IPreferenceStore preferenceStore = new ScopedPreferenceStore(new InstanceScope(),"nc.uap.studio.common");
 			String homePath=preferenceStore.getString("FIELD_NC_HOME");
-			File file=new File(homePath+"\\ierp\\bin\\prop.xml");
+			File file=new File(homePath+File.separator+"ierp"+File.separator+"bin"+File.separator+"prop.xml");
 			if(!file.canRead()){
 				throw new Exception("无法读取NCHomeProp.xml文件,请检查NChome路径设置是否正确");
 			}

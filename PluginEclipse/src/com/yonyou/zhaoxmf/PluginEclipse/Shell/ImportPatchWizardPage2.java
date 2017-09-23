@@ -286,11 +286,11 @@ public class ImportPatchWizardPage2 extends WizardPage {
 		}
 	}
 	public static boolean isModulesOrPatchPath(String path){
-		File file=new File(path+"\\classes");
+		File file=new File(path+File.separator+"classes");
 		if(file.exists())return true;
-		file=new File(path+"\\client\\classes");
+		file=new File(path+File.separator+"client"+File.separator+"classes");
 		if(file.exists())return true;
-		file=new File(path+"\\META-INF\\classes");
+		file=new File(path+File.separator+"META-INF"+File.separator+"classes");
 		if(file.exists())return true;
 		return false;
 	}

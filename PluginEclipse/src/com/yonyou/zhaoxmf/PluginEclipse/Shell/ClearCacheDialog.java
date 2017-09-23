@@ -50,7 +50,7 @@ public class ClearCacheDialog extends Dialog{
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
 		newShell.setText("ÇåNC»º´æ");
-		URL imageURL = Platform.getBundle(Activator.PLUGIN_ID).getEntry("icons/cleancache_small.png"); 
+		URL imageURL = Platform.getBundle(Activator.PLUGIN_ID).getEntry("icons"+File.separator+"cleancache_small.png"); 
 		Image image = ImageDescriptor.createFromURL(imageURL).createImage();
 		newShell.setImage(image);
 	}
@@ -66,7 +66,7 @@ public class ClearCacheDialog extends Dialog{
 		container.setLayout(gridlayout);
 		 container.setBounds(10, 10, 600, 600);
 		final Label label = new Label(container,SWT.PUSH);
-		NCCacheDir = System.getProperty("user.home")+"\\NCCACHE";
+		NCCacheDir = System.getProperty("user.home")+File.separator+"NCCACHE";
 		label.setText(NCCacheDir);
 		label.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,false,1,1));
 		final Button button1 =new Button(container, SWT.PUSH);
@@ -114,7 +114,7 @@ public class ClearCacheDialog extends Dialog{
 			for(String childDir:new File(NCCacheDir).list()){
 				Boolean bool=deleteDir(new File(NCCacheDir,childDir));
 				if(!bool){
-					failMessage+="É¾³ýÎÄ¼þ¼ÐÊ§°Ü£º"+NCCacheDir+"\\"+childDir;
+					failMessage+="É¾³ýÎÄ¼þ¼ÐÊ§°Ü£º"+NCCacheDir+File.separator+childDir;
 				}
 			}
 			if(failMessage.equals("")){

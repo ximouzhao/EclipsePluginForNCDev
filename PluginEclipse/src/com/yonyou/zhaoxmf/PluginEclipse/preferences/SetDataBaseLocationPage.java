@@ -19,14 +19,14 @@ import com.yonyou.zhaoxmf.PluginEclipse.Activator;
  * be accessed directly via the preference store.
  */
 
-public class SetPLSqlLocationPage
+public class SetDataBaseLocationPage
 	extends FieldEditorPreferencePage
 	implements IWorkbenchPreferencePage {
 
-	public SetPLSqlLocationPage() {
+	public SetDataBaseLocationPage() {
 		super(GRID);
 		setPreferenceStore(Activator.getDefault().getPreferenceStore());
-		setDescription("请选择PL/SQL的可执行文件");
+		setDescription("请选择数据库连接软件的可执行文件");
 	}
 	
 	/**
@@ -38,6 +38,8 @@ public class SetPLSqlLocationPage
 	public void createFieldEditors() {
 		addField(new FileFieldEditor(PreferenceConstants.P_PATH, 
 				"&PL/SQL安装路径:", getFieldEditorParent()));
+		addField(new FileFieldEditor(PreferenceConstants.D_PATH, 
+				"&Dbvis安装路径:", getFieldEditorParent()));
 		/*addField(
 			new BooleanFieldEditor(
 				PreferenceConstants.P_BOOLEAN,

@@ -215,6 +215,9 @@ public class ImportPatchWizard extends Wizard {
 			if (tempImportFile.isDirectory() && !page2.isImportFloder()) {
 				throw new Exception("选择的导入类型为补丁文件，而当前路径是目录");
 			}
+			if(!tempImportFile.exists()){
+				throw new Exception("读取补丁失败，文件或文件夹不存在");
+			}
 			if (new File(filePath).isFile() && filePath.endsWith(".zip")) {
 				extractPatchFolder = System.getProperty("user.home")
 						+ File.separator + "ExtractPatchTemp";

@@ -17,6 +17,7 @@ public class SWTTest extends Shell{
 	public static void main(String[] args) {
 		Display display=Display.getDefault();
 		final Shell shell=new Shell(display);
+		System.out.println("&qwer");
 		shell.setText("Hello SWT");
 		shell.setSize(260,283);
 		File file=new File("\\\\10.11.115.79\\nc\\patch_NCM_TBB_65_更新控制方案数组越界\\replacement\\modules\\tbb\\classes\\nc");

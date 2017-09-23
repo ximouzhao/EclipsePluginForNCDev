@@ -16,6 +16,15 @@
             </separator>
          </menu>
          <action
+               label="登录dbvis"
+               icon="icons/dbvis_small.png"
+               class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToDbvisAction"
+               tooltip="登录PL/SQL"
+               menubarPath="sampleMenu/sampleGroup"
+               toolbarPath="sampleGroup"
+               id="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToDbvisAction">
+         </action>
+         <action
                label="登录PL/SQL"
                icon="icons/toPlsql_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQLAction"
@@ -47,9 +56,9 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            class="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetPLSqlLocationPage"
-            id="com.yonyou.zhaoxmf.PluginEclipse.preferences.SamplePreferencePage"
-            name="PL/SQL安装路径">
+            class="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetDataBaseLocationPage"
+            id="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetDataBaseLocationPage"
+            name="数据库连接软件安装路径">
       </page>
    </extension>
    <extension
