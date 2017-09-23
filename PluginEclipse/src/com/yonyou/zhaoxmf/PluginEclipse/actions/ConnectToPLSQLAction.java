@@ -54,7 +54,12 @@ public class ConnectToPLSQLAction implements IWorkbenchWindowActionDelegate {
 				String plsqlPath=Activator.getDefault().getPreferenceStore().getString(PreferenceConstants.P_PATH);
 				if(plsqlPath==null||!plsqlPath.contains(".exe")||!new File(plsqlPath).exists()||!new File(plsqlPath).isFile()){throw new Exception("PL/sql路径设置错误,请在首选项中重新设置");}
 				//String cmd="\"C:\\Program Files\\PLSQL Developer\\plsqldev.exe\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
-				String cmd="\""+plsqlPath+"\" userid="+user+"/"+password+databaseUrl.substring(databaseUrl.indexOf("@"));
+				String cutDatabaseUrl=databaseUrl.substring(databaseUrl.indexOf("@"));
+				if(!cutDatabaseUrl.contains("/")){
+					String []tempStrArr=cutDatabaseUrl.split(":");
+					cutDatabaseUrl=tempStrArr[0]+":"+tempStrArr[1]+"/"+tempStrArr[2];
+				}
+				String cmd="\""+plsqlPath+"\" userid="+user+"/"+password+cutDatabaseUrl;
 				Runtime.getRuntime().exec(cmd);
 			}else{
 				throw new Exception("读取数据源出错");
