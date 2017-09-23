@@ -2,18 +2,18 @@
 <feature
       id="NCToolsEclipsePlugin"
       label="NCToolsEclipsePlugin"
-      version="1.0.0.qualifier">
+      version="1.0.0.201709231407">
 
    <description url="http://www.example.com/description">
-      [Enter Feature Description here.]
+      auther zhaoxmf@yonyou.com
    </description>
 
    <copyright url="http://www.example.com/copyright">
-      [Enter Copyright Description here.]
+      auther zhaoxmf@yonyou.com
    </copyright>
 
    <license url="http://www.example.com/license">
-      [Enter License Description here.]
+      auther zhaoxmf@yonyou.com
    </license>
 
    <plugin
