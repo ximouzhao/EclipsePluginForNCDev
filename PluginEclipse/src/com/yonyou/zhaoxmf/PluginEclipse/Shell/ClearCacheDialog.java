@@ -50,7 +50,7 @@ public class ClearCacheDialog extends Dialog{
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
 		newShell.setText("«ÂNCª∫¥Ê");
-		URL imageURL = Platform.getBundle(Activator.PLUGIN_ID).getEntry("icons"+File.separator+"cleancache_small.png"); 
+		URL imageURL = Platform.getBundle(Activator.PLUGIN_ID).getEntry("icons/cleancache_small.png"); 
 		Image image = ImageDescriptor.createFromURL(imageURL).createImage();
 		newShell.setImage(image);
 	}
