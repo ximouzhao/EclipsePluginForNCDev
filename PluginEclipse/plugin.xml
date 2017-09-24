@@ -58,7 +58,7 @@
       <page
             class="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetDataBaseLocationPage"
             id="com.yonyou.zhaoxmf.PluginEclipse.preferences.SetDataBaseLocationPage"
-            name="数据库连接软件安装路径">
+            name="PL/SQL_Dbvis安装路径">
       </page>
    </extension>
    <extension
