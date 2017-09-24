@@ -19,7 +19,7 @@
                label="登录dbvis"
                icon="icons/dbvis_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToDbvisAction"
-               tooltip="登录PL/SQL"
+               tooltip="登录dbvis"
                menubarPath="sampleMenu/sampleGroup"
                toolbarPath="sampleGroup"
                id="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToDbvisAction">
