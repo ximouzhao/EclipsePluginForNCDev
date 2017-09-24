@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/NCToolsEclipsePlugin_1.0.6.v201709241542.jar" id="NCToolsEclipsePlugin" version="1.0.6.v201709241542">
+   <feature url="features/NCToolsEclipsePlugin_1.0.6.v201709241546.jar" id="NCToolsEclipsePlugin" version="1.0.6.v201709241546">
       <category name="NCToolsEclipsePluginUpdateSite"/>
    </feature>
    <category-def name="NCToolsEclipsePluginUpdateSite" label="NCToolsEclipsePluginUpdateSite"/>
