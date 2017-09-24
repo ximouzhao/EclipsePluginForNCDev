@@ -26,7 +26,7 @@
          </action>
          <action
                label="登录PL/SQL"
-               icon="icons/toPlsql_small.png"
+               icon="icons/plsql_small.png"
                class="com.yonyou.zhaoxmf.PluginEclipse.actions.ConnectToPLSQLAction"
                tooltip="登录PL/SQL"
                menubarPath="sampleMenu/sampleGroup"
